@@ -7,20 +7,45 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="app-shell">
+  <section class="login-screen" id="login-screen">
+    <div class="login-intro">
+      <div class="brand login-brand"><span class="brand-mark">FW</span><span>formwell</span></div>
+      <p class="eyebrow">Gestão de treino com mais cuidado</p>
+      <h1>Um espaço claro para cada etapa do seu trabalho.</h1>
+      <p>Entre para acompanhar clientes, organizar planos e manter cada treino em movimento.</p>
+    </div>
+    <form class="login-card" id="login-form">
+      <div>
+        <p class="eyebrow">Acessar workspace</p>
+        <h2>Bem-vindo de volta</h2>
+        <p class="login-subhead">Use uma das contas de teste para continuar.</p>
+      </div>
+      <label>E-mail
+        <input type="email" id="login-email" autocomplete="username" placeholder="voce@email.com" required>
+      </label>
+      <label>Senha
+        <input type="password" id="login-password" autocomplete="current-password" placeholder="Sua senha" required>
+      </label>
+      <p class="login-error" id="login-error" role="alert"></p>
+      <button type="submit" class="primary-button login-submit">Entrar</button>
+      <div class="demo-accounts">
+        <span>Contas de teste</span>
+        <button type="button" data-login-account="admin">Administrador <small>admin@formwell.com</small></button>
+        <button type="button" data-login-account="client">Aluno <small>marina@formwell.com</small></button>
+      </div>
+    </form>
+  </section>
+
+  <main class="app-shell hidden" id="app-shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">FW</span><span>formwell</span></div>
       <div class="workspace-label">Workspace <strong>Northside Training</strong></div>
-
-      <div class="account-switch" aria-label="Conta de teste">
-        <button class="switch-button active" data-role="admin">Administrador</button>
-        <button class="switch-button" data-role="client">Cliente</button>
-      </div>
 
       <nav class="nav-list" aria-label="Navegação principal">
         <button class="nav-item active" data-view="overview"><span class="nav-icon">▦</span> Visão geral</button>
         <button class="nav-item" data-view="clients"><span class="nav-icon">◎</span> Clientes</button>
         <button class="nav-item" data-view="plans"><span class="nav-icon">▤</span> Planos</button>
+        <button class="nav-item admin-only" data-view="exercises"><span class="nav-icon">◈</span> Exercícios</button>
         <button class="nav-item" data-view="messages"><span class="nav-icon">✉</span> Mensagens <span class="dot"></span></button>
       </nav>
 
@@ -32,7 +57,6 @@
             <strong id="sidebar-name">Jordan Miles</strong>
             <small id="sidebar-role">Administrador</small>
           </div>
-          <span class="more">•••</span>
         </div>
       </div>
     </aside>
@@ -43,11 +67,16 @@
         <div class="breadcrumb">Workspace <span>/</span> <strong id="page-title">Visão geral</strong></div>
         <div class="top-actions">
           <button class="icon-button" title="Notificações">♧<span class="notification"></span></button>
-          <button class="user-chip" id="user-chip">
-            <span class="avatar trainer-avatar small" id="topbar-avatar">JM</span>
-            <span id="topbar-user-name">Jordan Miles</span>
-            <span>⌄</span>
-          </button>
+          <div class="user-menu">
+            <button class="user-chip" id="user-chip" aria-expanded="false" aria-controls="user-menu-panel">
+              <span class="avatar trainer-avatar small" id="topbar-avatar">JM</span>
+              <span id="topbar-user-name">Jordan Miles</span>
+              <span>⌄</span>
+            </button>
+            <div class="user-menu-panel hidden" id="user-menu-panel">
+              <button type="button" data-action="logout">Sair</button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -140,6 +169,56 @@
     </form>
   </dialog>
 
+  <dialog id="exercise-dialog">
+    <form id="exercise-form">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">Biblioteca</p>
+          <h2>Novo exercício</h2>
+        </div>
+        <button type="button" class="close-button" id="close-exercise-dialog">×</button>
+      </div>
+
+      <label>Nome do exercício
+        <input type="text" name="name" placeholder="Ex.: Agachamento livre" required>
+      </label>
+      <label>Descrição
+        <textarea name="description" rows="4" placeholder="Explique a execução e o objetivo..."></textarea>
+      </label>
+      <div class="dialog-grid">
+        <label>Tipo de execução padrão
+          <select name="defaultMode">
+            <option value="reps">Repetições</option>
+            <option value="time">Tempo</option>
+          </select>
+        </label>
+        <label>Quantidade padrão
+          <input type="number" name="defaultQuantity" min="0" step="1" value="10">
+        </label>
+        <label>Peso padrão (kg)
+          <input type="number" name="defaultWeight" min="0" step="0.5" value="0">
+        </label>
+        <label>Tipo de demonstração
+          <select name="mediaType" id="exercise-media-type">
+            <option value="image">Imagem</option>
+            <option value="video">Vídeo curto</option>
+          </select>
+        </label>
+        <label class="dialog-wide-field">Arquivo de demonstração
+          <input type="file" name="mediaFile" id="exercise-media-file" accept="image/*,video/*">
+          <small class="field-help">Imagem ou vídeo curto do computador. O arquivo fica salvo neste navegador.</small>
+        </label>
+      </div>
+      <div id="exercise-media-preview" class="media-preview hidden"></div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-button" id="cancel-exercise-dialog">Cancelar</button>
+        <button type="submit" class="primary-button">Cadastrar exercício</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>

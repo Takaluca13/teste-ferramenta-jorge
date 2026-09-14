@@ -1,0 +1,19 @@
+name = "formwell-api"
+main = "worker.js"
+compatibility_date = "2026-09-14"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "formwell-db"
+database_id = "6baf2d11-33ea-4661-9b1c-e32d9019f109"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "formwell-media"
+
+[vars]
+ALLOWED_ORIGIN = "https://SEU_USUARIO.github.io"
+
+# Set secrets with:
+# wrangler secret put ADMIN_API_KEY --config wrangler.worker.toml
+# wrangler secret put CLIENT_API_KEY --config wrangler.worker.toml
