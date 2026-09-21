@@ -1,12 +1,30 @@
 ﻿const dayOrder = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
-const clients = [
+let clients = [
   { id: 'amelia', name: 'Amélia Pereira', email: 'amelia.pereira@email.com', initials: 'AP', progress: 82, color: 'coral', focus: 'Força geral' },
   { id: 'marcus', name: 'Marcus Chen', email: 'marcus.chen@email.com', initials: 'MC', progress: 64, color: 'blue', focus: 'Mobilidade' },
   { id: 'sofia', name: 'Sofia Williams', email: 'sofia.williams@email.com', initials: 'SW', progress: 91, color: 'olive', focus: 'Core e postura' },
   { id: 'leo', name: 'Leo Martins', email: 'leo.martins@email.com', initials: 'LM', progress: 48, color: 'lavender', focus: 'Resistência' },
   { id: 'marina', name: 'Marina Costa', email: 'marina.costa@email.com', initials: 'MC', progress: 74, color: 'mint', focus: 'Condicionamento' }
 ];
+
+const goalTypes = {
+  weight: 'Peso',
+  aesthetic: 'Estético',
+  mobility: 'Mobilidade',
+  custom: 'Personalizada'
+};
+
+const messageGroups = {
+  active: 'Alunos ativos',
+  strength: 'Foco em força',
+  mobility: 'Foco em mobilidade'
+};
+
+let goals = JSON.parse(localStorage.getItem('formwell-goals') || '[]');
+let messages = JSON.parse(localStorage.getItem('formwell-messages') || JSON.stringify([
+  { id: 1, senderRole: 'admin', senderName: 'Jordan Miles', recipientType: 'client', recipientId: 'marina', title: 'Mensagem do treinador', body: 'Ajustei sua frequência de cardio para terça e quinta, mantendo intensidade moderada.', createdAt: new Date().toISOString() }
+]));
 
 let trainings = [
   { id: 1, clientId: 'amelia', title: 'Treino de força', category: 'Força', time: '08:00', duration: '45 min', notes: 'Foco em agachamento e puxada.', frequency: 'semanal', dayName: 'Segunda', exercises: [
@@ -64,6 +82,7 @@ let exercises = [
 
 let databaseReady = false;
 let databasePromise = null;
+let remoteDataReady = false;
 const supabaseSettings = window.FORMWELL_SUPABASE || { enabled: false };
 const supabaseClient = supabaseSettings.enabled && window.supabase
   ? window.supabase.createClient(supabaseSettings.url, supabaseSettings.publishableKey)
@@ -71,9 +90,13 @@ const supabaseClient = supabaseSettings.enabled && window.supabase
 
 const state = {
   isAuthenticated: false,
+  loginRequested: false,
   currentRole: 'admin',
   currentView: 'overview',
   currentClientId: 'marina',
+  authUserId: null,
+  guidedPlanId: null,
+  guidedExerciseIndex: 0,
   editingPlanId: null,
   editingExerciseId: null,
   planClientFilter: 'all',
@@ -81,6 +104,7 @@ const state = {
 };
 
 const elements = {
+  landingScreen: document.querySelector('#landing-screen'),
   loginScreen: document.querySelector('#login-screen'),
   loginForm: document.querySelector('#login-form'),
   loginEmail: document.querySelector('#login-email'),
@@ -182,6 +206,139 @@ async function initialiseDatabase() {
   }
 }
 
+async function loadRemoteData() {
+  if (!supabaseClient) return;
+
+  const [{ data: planRows, error: planError }, { data: goalRows, error: goalError }, { data: messageRows, error: messageError }, { data: profileRows, error: profileError }] = await Promise.all([
+    supabaseClient.from('training_plans').select('*, training_plan_exercises(*)').order('day_name').order('time'),
+    supabaseClient.from('goals').select('*').order('created_at', { ascending: false }),
+    supabaseClient.from('messages').select('*').order('created_at', { ascending: false }),
+    supabaseClient.from('profiles').select('id, full_name, role').eq('role', 'client').order('full_name')
+  ]);
+
+  if (planError) throw planError;
+  if (goalError) throw goalError;
+  if (messageError) throw messageError;
+  if (profileError) throw profileError;
+
+  trainings = (planRows || []).map(normaliseRemotePlan);
+  goals = (goalRows || []).map(normaliseRemoteGoal);
+  messages = (messageRows || []).map(normaliseRemoteMessage);
+  if (profileRows?.length) {
+    clients = profileRows.map((profile, index) => ({
+      id: profile.id,
+      name: profile.full_name || 'Aluno sem nome',
+      email: '',
+      initials: (profile.full_name || 'AS').split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase(),
+      progress: 0,
+      color: ['coral', 'blue', 'olive', 'lavender', 'mint'][index % 5],
+      focus: 'Acompanhamento personalizado'
+    }));
+  }
+  remoteDataReady = true;
+}
+
+function normaliseRemotePlan(plan) {
+  return {
+    id: plan.id,
+    clientId: plan.client_id,
+    title: plan.title,
+    category: plan.category,
+    frequency: plan.frequency,
+    dayName: plan.day_name,
+    dayNumber: plan.day_number,
+    time: plan.time,
+    duration: plan.duration,
+    notes: plan.notes,
+    exercises: (plan.training_plan_exercises || []).sort((a, b) => a.position - b.position).map((item) => ({
+      exerciseId: item.exercise_id,
+      name: item.exercise_name_snapshot,
+      description: item.description_snapshot,
+      mode: item.mode,
+      quantity: item.quantity,
+      weight: Number(item.weight || 0)
+    }))
+  };
+}
+
+function normaliseRemoteGoal(goal) {
+  return { ...goal, clientId: goal.client_id, deadline: goal.deadline || '' };
+}
+
+function normaliseRemoteMessage(message) {
+  return {
+    ...message,
+    senderId: message.sender_id,
+    senderRole: message.sender_role,
+    recipientType: message.recipient_type,
+    recipientId: message.recipient_id,
+    createdAt: message.created_at
+  };
+}
+
+async function saveRemoteMessage(message) {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.from('messages').insert({
+    sender_id: state.authUserId,
+    sender_role: message.senderRole,
+    recipient_type: message.recipientType,
+    recipient_id: message.recipientId || null,
+    title: message.title,
+    body: message.body
+  });
+  if (error) throw error;
+}
+
+async function saveRemoteGoal(goal) {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.from('goals').insert({
+    client_id: state.authUserId,
+    type: goal.type,
+    title: goal.title,
+    target: goal.target,
+    deadline: goal.deadline || null
+  });
+  if (error) throw error;
+}
+
+async function saveRemotePlan(plan) {
+  if (!supabaseClient) return plan;
+  const payload = {
+    client_id: plan.clientId,
+    title: plan.title,
+    category: plan.category,
+    frequency: plan.frequency,
+    day_name: plan.dayName,
+    day_number: plan.dayNumber,
+    time: plan.time,
+    duration: plan.duration,
+    notes: plan.notes
+  };
+  const query = typeof plan.id === 'string'
+    ? supabaseClient.from('training_plans').update(payload).eq('id', plan.id).select().single()
+    : supabaseClient.from('training_plans').insert(payload).select().single();
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const removed = await supabaseClient.from('training_plan_exercises').delete().eq('plan_id', data.id);
+  if (removed.error) throw removed.error;
+  const links = (plan.exercises || []).filter((item) => item.exerciseId).map((item, index) => ({
+    plan_id: data.id,
+    exercise_id: item.exerciseId,
+    position: index,
+    mode: item.mode || 'reps',
+    quantity: Number(item.quantity || item.reps || item.seconds || 0),
+    weight: Number(item.weight || 0),
+    exercise_name_snapshot: item.name || getExerciseById(item.exerciseId)?.name || '',
+    description_snapshot: item.description || getExerciseById(item.exerciseId)?.description || ''
+  }));
+  if (links.length) {
+    const inserted = await supabaseClient.from('training_plan_exercises').insert(links);
+    if (inserted.error) throw inserted.error;
+  }
+  return normaliseRemotePlan({ ...data, training_plan_exercises: links });
+}
+
 async function loadRemoteExercises() {
   const { data, error } = await supabaseClient.from('exercises').select('*').order('name');
   if (error) throw error;
@@ -266,10 +423,12 @@ async function signInWithSupabase(email, password) {
   const profile = await supabaseClient.from('profiles').select('role').eq('id', data.user.id).single();
   if (profile.error) throw profile.error;
   state.isAuthenticated = true;
+  state.authUserId = data.user.id;
   state.currentRole = profile.data.role;
   state.currentView = 'overview';
   state.currentClientId = data.user.id;
   await loadRemoteExercises();
+  await loadRemoteData();
   elements.loginError.textContent = '';
   elements.loginForm.reset();
   render();
@@ -321,6 +480,30 @@ function getCurrentRolePlans() {
     : getClientPlans(state.currentClientId);
 }
 
+function persistUserData() {
+  localStorage.setItem('formwell-goals', JSON.stringify(goals));
+  localStorage.setItem('formwell-messages', JSON.stringify(messages));
+}
+
+function getTodayPlans() {
+  return getClientPlans(state.currentClientId).filter((plan) => plan.frequency === 'semanal' && plan.dayName === getTodayName());
+}
+
+function getMessageAudience(message) {
+  if (message.recipientType === 'admin') return state.currentRole === 'admin' ? 'Você' : 'Treinador';
+  if (message.recipientType === 'client') return getClientById(message.recipientId).name;
+  if (message.recipientType === 'group') return messageGroups[message.recipientId] || 'Grupo de alunos';
+  return 'Todos os alunos';
+}
+
+function messageBelongsToCurrentUser(message) {
+  if (state.currentRole === 'admin') return message.senderRole === 'admin' || message.recipientType === 'admin';
+  return (message.senderRole === 'client' && message.senderId === state.currentClientId)
+    || (message.senderRole === 'admin' && message.recipientType === 'client' && message.recipientId === state.currentClientId)
+    || (message.senderRole === 'admin' && message.recipientType === 'all')
+    || (message.senderRole === 'admin' && message.recipientType === 'group');
+}
+
 function getNextPlanForClient(clientId) {
   const plans = getClientPlans(clientId).sort((a, b) => {
     const dayA = a.frequency === 'semanal' ? dayOrder.indexOf(a.dayName) : 7;
@@ -360,7 +543,8 @@ function renderAccountHeader() {
   document.querySelectorAll('.nav-item[data-view]').forEach((button) => {
     const isAdminOnlyPage = button.classList.contains('admin-only') && state.currentRole !== 'admin';
     const isClientOnlyPage = state.currentRole === 'client' && button.dataset.view === 'clients';
-    button.classList.toggle('hidden', isAdminOnlyPage || isClientOnlyPage);
+    const isGoalPage = button.classList.contains('client-only') && state.currentRole !== 'client';
+    button.classList.toggle('hidden', isAdminOnlyPage || isClientOnlyPage || isGoalPage);
     button.classList.toggle('active', button.dataset.view === state.currentView);
   });
 }
@@ -369,9 +553,13 @@ function renderWelcomeRow() {
   const user = getCurrentUser();
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Bom dia' : currentHour < 18 ? 'Boa tarde' : 'Boa noite';
+  const todayPlans = state.currentRole === 'client' ? getTodayPlans() : [];
+  const startButton = todayPlans[0]
+    ? `<button class="primary-button" data-start-plan="${todayPlans[0].id}">▶ Iniciar treino de hoje</button>`
+    : '';
   const actionButton = state.currentRole === 'admin'
     ? '<button class="primary-button" data-action="open-plan-dialog">＋ Novo treino</button>'
-    : '<button class="primary-button" data-action="open-plan-dialog">＋ Ver agenda</button>';
+    : startButton || '<button class="secondary-button" data-view-action="plans">Ver minha agenda →</button>';
 
   elements.welcomeRow.innerHTML = `
     <div>
@@ -379,7 +567,7 @@ function renderWelcomeRow() {
       <h1>${greeting}, ${user.name.split(' ')[0]}.</h1>
       <p class="subhead">${state.currentRole === 'admin' ? 'Aqui está o que está acontecendo com seus clientes hoje.' : 'Seu plano está atualizado e pronto para a semana.'}</p>
     </div>
-    ${actionButton}
+    <div class="welcome-actions">${actionButton}</div>
   `;
 }
 
@@ -530,7 +718,7 @@ function renderClientSchedule() {
           <p class="eyebrow">Seu plano</p>
           <h2>Próximos treinos</h2>
         </div>
-        <button class="text-button" data-action="open-plan-dialog">Detalhes →</button>
+        <button class="text-button" data-view-action="plans">Ver calendário →</button>
       </div>
       <div class="schedule-list">${scheduleHtml}</div>
     </article>
@@ -543,7 +731,7 @@ function renderClientSchedule() {
         <span class="panel-badge">3x / semana</span>
       </div>
       <div class="attention-list">
-        <div class="message-card">
+          <div class="message-card">
           <span class="modal-tag">Força</span>
           <strong>Treino de força + mobilidade</strong>
           <small>Manter consistência e melhorar movimento na coluna e quadril.</small>
@@ -551,8 +739,9 @@ function renderClientSchedule() {
         <div class="message-card">
           <span class="modal-tag">Recuperação</span>
           <strong>Hidratação e descanso</strong>
-          <small>Priorizar 7+ horas de sono e alongamentos de recuperação.</small>
+            <small>Priorizar 7+ horas de sono e alongamentos de recuperação.</small>
         </div>
+          ${getTodayPlans()[0] ? `<button class="primary-button" data-start-plan="${getTodayPlans()[0].id}">▶ Iniciar treino de hoje</button>` : ''}
       </div>
     </article>
   `;
@@ -627,8 +816,8 @@ function renderClientExerciseMedia(planExercises = []) {
   const media = planExercises.map((item) => {
     const exercise = getExerciseById(item.exerciseId);
     const mediaUrl = getExerciseMediaUrl(exercise);
-    if (!exercise || exercise.mediaType !== 'video' || !mediaUrl) return '';
-    return `<div class="client-video"><strong>${exercise.name}</strong><video src="${mediaUrl}" controls preload="metadata"></video></div>`;
+    if (!exercise || !mediaUrl) return '';
+    return `<div class="client-video"><strong>${exercise.name}</strong>${exercise.mediaType === 'video' ? `<video src="${mediaUrl}" controls preload="metadata"></video>` : `<img src="${mediaUrl}" alt="Demonstração de ${exercise.name}">`}</div>`;
   }).join('');
   return media;
 }
@@ -667,7 +856,7 @@ function renderPlanBoard() {
               <small>${summarizeExercises(plan.exercises)}</small>
               ${renderClientExerciseMedia(plan.exercises)}
               <div class="session-actions">
-                <button class="inline-button" type="button" data-edit-plan="${plan.id}">Editar</button>
+                ${state.currentRole === 'admin' ? `<button class="inline-button" type="button" data-edit-plan="${plan.id}">Editar</button>` : `<button class="inline-button" type="button" data-start-plan="${plan.id}">▶ Iniciar treino</button>`}
               </div>
             </div>
           `;
@@ -696,7 +885,7 @@ function renderPlanBoard() {
             <small>${summarizeExercises(plan.exercises)}</small>
             ${renderClientExerciseMedia(plan.exercises)}
             <div class="session-actions">
-              <button class="inline-button" type="button" data-edit-plan="${plan.id}">Editar</button>
+              ${state.currentRole === 'admin' ? `<button class="inline-button" type="button" data-edit-plan="${plan.id}">Editar</button>` : `<button class="inline-button" type="button" data-start-plan="${plan.id}">▶ Iniciar treino</button>`}
             </div>
           </div>
         `;
@@ -718,7 +907,7 @@ function renderPlanBoard() {
               ${clients.map((client) => `<option value="${client.id}" ${state.planClientFilter === client.id ? 'selected' : ''}>${client.name}</option>`).join('')}
             </select>
           ` : ''}
-          <button class="primary-button" type="button" data-action="open-plan-dialog">＋ Novo treino</button>
+          ${state.currentRole === 'admin' ? '<button class="primary-button" type="button" data-action="open-plan-dialog">＋ Novo treino</button>' : ''}
         </div>
       </div>
       <div class="board-grid">${cards}</div>
@@ -736,23 +925,40 @@ function renderPlanBoard() {
 }
 
 function renderMessagesPanel() {
-  const cards = [
-    { title: 'Resumo da semana', summary: 'Seu objetivo principal continua sendo melhorar força e estabilidade do core.', tag: 'Treino' },
-    { title: 'Mensagem do treinador', summary: 'Ajustei sua frequência de cardio para terça e quinta, mantendo intensidade moderada.', tag: 'Anotações' },
-    { title: 'Checklist do mês', summary: 'Registre hidratação, sono e evolução de dor em cada treino.', tag: 'Meta' }
-  ];
+  const visibleMessages = messages.filter(messageBelongsToCurrentUser).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const cards = visibleMessages.length ? visibleMessages.map((message) => `
+    <div class="message-card"><span class="modal-tag">${message.senderRole === 'admin' ? 'Treinador' : 'Você'}</span><strong>${message.title}</strong><small>${message.body}</small><em class="message-audience">Para: ${getMessageAudience(message)}</em></div>
+  `).join('') : '<div class="empty-state">Nenhuma mensagem por enquanto.</div>';
+  const compose = state.currentRole === 'admin' ? `
+    <form class="message-compose" id="message-form">
+      <div class="compose-heading"><div><p class="eyebrow">Comunicação</p><h2>Nova mensagem</h2></div><span class="panel-badge">Admin</span></div>
+      <div class="dialog-grid"><label>Enviar para<select name="recipientType" id="message-recipient-type"><option value="client">Aluno específico</option><option value="group">Grupo de alunos</option><option value="all">Todos os alunos</option></select></label><label id="message-recipient-field">Destinatário<select name="recipientId" id="message-recipient-id"></select></label></div>
+      <input name="title" placeholder="Assunto" required><textarea name="body" rows="3" placeholder="Escreva uma mensagem para seus alunos..." required></textarea><button class="primary-button" type="submit">Enviar mensagem</button>
+    </form>` : `
+    <form class="message-compose" id="message-form"><div class="compose-heading"><div><p class="eyebrow">Fale com seu treinador</p><h2>Enviar mensagem</h2></div></div><input name="title" placeholder="Assunto" required><textarea name="body" rows="4" placeholder="Escreva sua mensagem..." required></textarea><button class="primary-button" type="submit">Enviar para o admin</button></form>`;
 
   return `
-    <div class="content-grid">
-      ${cards.map((card) => `
-        <div class="message-card">
-          <span class="modal-tag">${card.tag}</span>
-          <strong>${card.title}</strong>
-          <small>${card.summary}</small>
-        </div>
-      `).join('')}
-    </div>
+    <div class="messages-layout">${compose}<div class="content-grid">${cards}</div></div>
   `;
+}
+
+function renderGoalsPage() {
+  const clientGoals = goals.filter((goal) => goal.clientId === state.currentClientId);
+  return `<div class="goals-layout"><div class="page-heading-row"><div><p class="eyebrow">Seu caminho</p><h2>Metas pessoais</h2><p class="subhead">Escolha o que quer acompanhar e transforme intenção em progresso.</p></div></div><form class="goal-form" id="goal-form"><label>Tipo de meta<select name="type"><option value="weight">Peso</option><option value="aesthetic">Estético</option><option value="mobility">Mobilidade</option><option value="custom">Personalizada</option></select></label><label>Meta<input name="title" placeholder="Ex.: Chegar a 70 kg ou tocar os pés" required></label><label>Como medir<input name="target" placeholder="Ex.: 70 kg, 90 graus, 3x por semana" required></label><label>Prazo<input type="date" name="deadline"></label><button class="primary-button" type="submit">＋ Adicionar meta</button></form><div class="goals-list">${clientGoals.length ? clientGoals.map((goal) => `<article class="goal-card"><span class="modal-tag">${goalTypes[goal.type]}</span><h3>${goal.title}</h3><p>${goal.target}</p><small>${goal.deadline ? `Prazo: ${new Date(`${goal.deadline}T12:00:00`).toLocaleDateString('pt-BR')}` : 'Sem prazo definido'}</small></article>`).join('') : '<div class="empty-state">Você ainda não cadastrou uma meta.</div>'}</div></div>`;
+}
+
+function renderGuidedWorkout() {
+  const plan = trainings.find((item) => String(item.id) === String(state.guidedPlanId));
+  if (!plan || state.currentRole !== 'client') return '';
+  const planExercises = plan.exercises || [];
+  const item = planExercises[state.guidedExerciseIndex];
+  const libraryExercise = getExerciseById(item?.exerciseId);
+  const mediaUrl = getExerciseMediaUrl(libraryExercise);
+  if (!item) return `<div class="guided-workout"><button class="back-link" data-action="close-guided-workout">← Voltar aos treinos</button><h2>Treino concluído</h2><p class="subhead">Você completou ${plan.title}. Bom trabalho.</p><button class="primary-button" data-action="close-guided-workout">Voltar ao calendário</button></div>`;
+  const mode = item.mode || (item.seconds ? 'time' : 'reps');
+  const quantity = item.quantity || (mode === 'time' ? item.seconds : item.reps) || 0;
+  const media = mediaUrl ? (libraryExercise.mediaType === 'video' ? `<video class="guided-media" src="${mediaUrl}" controls></video>` : `<img class="guided-media" src="${mediaUrl}" alt="Demonstração de ${item.name}">`) : '<div class="guided-media-placeholder">O professor não adicionou uma demonstração para este exercício.</div>';
+  return `<div class="guided-workout"><button class="back-link" data-action="close-guided-workout">← Voltar aos treinos</button><div class="guided-heading"><div><p class="eyebrow">${plan.title} · Exercício ${state.guidedExerciseIndex + 1} de ${planExercises.length}</p><h2>${item.name}</h2></div><span class="panel-badge">${plan.duration}</span></div>${media}<div class="guided-details"><div><span>Execução</span><strong>${mode === 'time' ? `${quantity} segundos` : `${quantity} repetições`}</strong></div><div><span>Peso</span><strong>${Number(item.weight || 0) ? `${item.weight} kg` : 'Peso corporal'}</strong></div><div><span>Orientação</span><strong>${item.description || libraryExercise?.description || 'Siga o ritmo orientado pelo professor.'}</strong></div></div><div class="guided-actions">${state.guidedExerciseIndex > 0 ? '<button class="secondary-button" data-guided-step="previous">← Anterior</button>' : '<span></span>'}<button class="primary-button" data-guided-step="next">${state.guidedExerciseIndex === planExercises.length - 1 ? 'Concluir treino ✓' : 'Próximo exercício →'}</button></div></div>`;
 }
 
 function renderExercisesPage() {
@@ -807,6 +1013,8 @@ function renderContentPanel() {
     content = renderClientTable();
   } else if (state.currentView === 'plans') {
     content = renderPlanBoard();
+  } else if (state.currentView === 'goals' && state.currentRole === 'client') {
+    content = renderGoalsPage();
   } else if (state.currentView === 'exercises' && state.currentRole === 'admin') {
     content = renderExercisesPage();
   } else {
@@ -884,11 +1092,20 @@ function exercisesLibraryOptions(selectedId, legacyName = '') {
 }
 
 function render() {
-  elements.loginScreen.classList.toggle('hidden', state.isAuthenticated);
+  elements.landingScreen.classList.toggle('hidden', state.isAuthenticated || state.loginRequested);
+  elements.loginScreen.classList.toggle('hidden', state.isAuthenticated || !state.loginRequested);
   elements.appShell.classList.toggle('hidden', !state.isAuthenticated);
   if (!state.isAuthenticated) return;
 
   renderAccountHeader();
+  if (state.guidedPlanId) {
+    elements.welcomeRow.classList.add('hidden');
+    elements.metricsGrid.classList.add('hidden');
+    elements.mainGrid.classList.add('hidden');
+    elements.contentPanel.classList.remove('hidden');
+    elements.contentPanel.innerHTML = renderGuidedWorkout();
+    return;
+  }
   const isOverview = state.currentView === 'overview';
   elements.welcomeRow.classList.toggle('hidden', !isOverview);
   elements.metricsGrid.classList.toggle('hidden', !isOverview);
@@ -902,6 +1119,7 @@ function render() {
   }
   renderMainGrid();
   renderContentPanel();
+  populateMessageRecipients();
   populatePlanClientOptions();
   syncPlanFormFrequency();
 }
@@ -957,10 +1175,11 @@ function applyExerciseDefaults(row, exerciseId) {
 }
 
 function openPlanDialog(planId = null) {
+  if (state.currentRole !== 'admin') return;
   state.editingPlanId = planId;
 
   if (planId) {
-    const plan = trainings.find((item) => item.id === Number(planId));
+    const plan = trainings.find((item) => String(item.id) === String(planId));
     if (!plan) return;
 
     elements.planDialogTitle.textContent = 'Editar treino';
@@ -999,8 +1218,9 @@ function closePlanDialog() {
   state.editingPlanId = null;
 }
 
-function handlePlanSubmit(event) {
+async function handlePlanSubmit(event) {
   event.preventDefault();
+  if (state.currentRole !== 'admin') return;
 
   const formData = new FormData(elements.planForm);
   const exerciseRows = document.querySelectorAll('#exercise-list .exercise-row');
@@ -1017,20 +1237,22 @@ function handlePlanSubmit(event) {
     exercises: normaliseExercises(exerciseRows)
   };
 
-  if (state.editingPlanId) {
-    const index = trainings.findIndex((plan) => plan.id === Number(state.editingPlanId));
-    if (index >= 0) {
-      trainings[index] = { ...trainings[index], ...payload };
-    }
-  } else {
-    trainings.push({
-      id: Date.now(),
-      ...payload
-    });
-  }
+  const existingIndex = state.editingPlanId
+    ? trainings.findIndex((plan) => String(plan.id) === String(state.editingPlanId))
+    : -1;
+  const nextPlan = { ...(existingIndex >= 0 ? trainings[existingIndex] : {}), ...payload, id: existingIndex >= 0 ? trainings[existingIndex].id : Date.now() };
 
-  closePlanDialog();
-  persistData().then(render);
+  try {
+    const savedPlan = supabaseClient ? await saveRemotePlan(nextPlan) : nextPlan;
+    if (existingIndex >= 0) trainings[existingIndex] = savedPlan;
+    else trainings.push(savedPlan);
+    closePlanDialog();
+    await persistData();
+    render();
+  } catch (error) {
+    console.error(error);
+    elements.loginError.textContent = 'Não foi possível salvar o treino no banco de dados.';
+  }
 }
 
 const demoAccounts = {
@@ -1046,6 +1268,7 @@ function login(role, email, password) {
   }
 
   state.isAuthenticated = true;
+  state.authUserId = null;
   state.currentRole = account.role;
   state.currentView = 'overview';
   state.currentClientId = account.role === 'client' ? 'marina' : state.currentClientId;
@@ -1057,11 +1280,107 @@ function login(role, email, password) {
 async function logout() {
   if (supabaseClient) await supabaseClient.auth.signOut();
   state.isAuthenticated = false;
+  state.authUserId = null;
+  remoteDataReady = false;
+  state.loginRequested = false;
   state.currentView = 'overview';
   elements.userMenuPanel.classList.add('hidden');
   elements.userChip.setAttribute('aria-expanded', 'false');
   elements.loginForm.reset();
   elements.loginError.textContent = '';
+  render();
+}
+
+function showLogin() {
+  state.loginRequested = true;
+  elements.loginError.textContent = '';
+  render();
+  elements.loginEmail.focus();
+}
+
+function showLanding() {
+  state.loginRequested = false;
+  elements.loginForm.reset();
+  elements.loginError.textContent = '';
+  render();
+}
+
+function populateMessageRecipients() {
+  const type = document.querySelector('#message-recipient-type');
+  const field = document.querySelector('#message-recipient-field');
+  const select = document.querySelector('#message-recipient-id');
+  if (!type || !field || !select) return;
+  const isClient = type.value === 'client';
+  field.classList.toggle('hidden', type.value === 'all');
+  if (type.value === 'group') {
+    select.innerHTML = Object.entries(messageGroups).map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+  } else {
+    select.innerHTML = clients.map((client) => `<option value="${client.id}">${client.name}</option>`).join('');
+  }
+  select.name = isClient ? 'recipientId' : 'recipientId';
+}
+
+async function handleMessageSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  const isAdmin = state.currentRole === 'admin';
+  messages.push({
+    id: Date.now(),
+    senderRole: state.currentRole,
+    senderId: state.currentRole === 'client' ? state.currentClientId : null,
+    senderName: getCurrentUser().name,
+    recipientType: isAdmin ? formData.get('recipientType') : 'admin',
+    recipientId: isAdmin ? formData.get('recipientId') : 'admin',
+    title: formData.get('title').trim(),
+    body: formData.get('body').trim(),
+    createdAt: new Date().toISOString()
+  });
+  try {
+    if (supabaseClient) await saveRemoteMessage(messages[messages.length - 1]);
+    persistUserData();
+    render();
+  } catch (error) {
+    messages.pop();
+    console.error(error);
+    elements.loginError.textContent = 'Não foi possível enviar a mensagem.';
+  }
+}
+
+async function handleGoalSubmit(event) {
+  event.preventDefault();
+  const formData = new FormData(event.target);
+  goals.push({
+    id: Date.now(),
+    clientId: state.currentClientId,
+    type: formData.get('type'),
+    title: formData.get('title').trim(),
+    target: formData.get('target').trim(),
+    deadline: formData.get('deadline') || ''
+  });
+  try {
+    if (supabaseClient) await saveRemoteGoal(goals[goals.length - 1]);
+    persistUserData();
+    render();
+  } catch (error) {
+    goals.pop();
+    console.error(error);
+    elements.loginError.textContent = 'Não foi possível salvar a meta.';
+  }
+}
+
+function startGuidedWorkout(planId) {
+  if (state.currentRole !== 'client') return;
+  const plan = trainings.find((item) => String(item.id) === String(planId));
+  if (!plan) return;
+  state.guidedPlanId = plan.id;
+  state.guidedExerciseIndex = 0;
+  render();
+}
+
+function closeGuidedWorkout() {
+  state.guidedPlanId = null;
+  state.guidedExerciseIndex = 0;
   render();
 }
 
@@ -1225,6 +1544,18 @@ document.querySelectorAll('.nav-item[data-view]').forEach((button) => {
 });
 
 document.addEventListener('click', (event) => {
+  const showLoginAction = event.target.closest('[data-action="show-login"]');
+  if (showLoginAction) {
+    showLogin();
+    return;
+  }
+
+  const showLandingAction = event.target.closest('[data-action="show-landing"]');
+  if (showLandingAction) {
+    showLanding();
+    return;
+  }
+
   const logoutAction = event.target.closest('[data-action="logout"]');
   if (logoutAction) {
     logout();
@@ -1247,6 +1578,35 @@ document.addEventListener('click', (event) => {
   const viewAction = event.target.closest('[data-action="open-plan-dialog"]');
   if (viewAction) {
     openPlanDialog();
+    return;
+  }
+
+  const viewButton = event.target.closest('[data-view-action]');
+  if (viewButton) {
+    state.currentView = viewButton.dataset.viewAction;
+    render();
+    return;
+  }
+
+  const startButton = event.target.closest('[data-start-plan]');
+  if (startButton) {
+    startGuidedWorkout(startButton.dataset.startPlan);
+    return;
+  }
+
+  const closeGuidedButton = event.target.closest('[data-action="close-guided-workout"]');
+  if (closeGuidedButton) {
+    closeGuidedWorkout();
+    return;
+  }
+
+  const guidedStep = event.target.closest('[data-guided-step]');
+  if (guidedStep && state.guidedPlanId) {
+    const plan = trainings.find((item) => String(item.id) === String(state.guidedPlanId));
+    const total = plan?.exercises?.length || 0;
+    state.guidedExerciseIndex += guidedStep.dataset.guidedStep === 'previous' ? -1 : 1;
+    if (state.guidedExerciseIndex >= total) state.guidedExerciseIndex = total;
+    render();
     return;
   }
 
@@ -1296,6 +1656,10 @@ document.addEventListener('input', (event) => {
 });
 
 document.addEventListener('change', (event) => {
+  if (event.target.id === 'message-recipient-type') {
+    populateMessageRecipients();
+    return;
+  }
   if (event.target.id === 'plan-client-filter') {
     state.planClientFilter = event.target.value;
     render();
@@ -1310,6 +1674,11 @@ document.addEventListener('change', (event) => {
   if (event.target.id === 'exercise-media-file') {
     showSelectedFilePreview(event.target.files[0]);
   }
+});
+
+document.addEventListener('submit', (event) => {
+  if (event.target.id === 'message-form') handleMessageSubmit(event);
+  if (event.target.id === 'goal-form') handleGoalSubmit(event);
 });
 
 document.querySelector('#close-plan-dialog').addEventListener('click', closePlanDialog);

@@ -7,7 +7,48 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <section class="login-screen" id="login-screen">
+  <section class="landing-screen" id="landing-screen">
+    <nav class="landing-nav" aria-label="Navegação pública">
+      <div class="brand"><span class="brand-mark">FW</span><span>formwell</span></div>
+      <button class="secondary-button landing-login-button" type="button" data-action="show-login">Entrar <span aria-hidden="true">→</span></button>
+    </nav>
+
+    <div class="landing-hero">
+      <div class="landing-copy">
+        <p class="eyebrow">Treino com intenção</p>
+        <h1>Mais presença no treino. Mais progresso para cada cliente.</h1>
+        <p class="landing-lead">O Formwell reúne planos, acompanhamento e comunicação em um só lugar para que você possa cuidar melhor do que realmente importa: a evolução de cada pessoa.</p>
+        <div class="landing-actions">
+          <button class="primary-button" type="button" data-action="show-login">Acessar meu workspace <span aria-hidden="true">↗</span></button>
+          <a class="landing-text-link" href="#how-it-works">Conhecer a plataforma <span aria-hidden="true">↓</span></a>
+        </div>
+      </div>
+
+      <div class="landing-preview" aria-label="Prévia do acompanhamento de um cliente">
+        <div class="preview-topline"><span class="preview-status"><i></i> Acompanhamento ativo</span><span>Esta semana</span></div>
+        <div class="preview-client">
+          <div class="attention-avatar mint">MC</div>
+          <div><span class="preview-kicker">Plano de Marina</span><strong>Constância antes da pressa.</strong></div>
+          <span class="preview-progress">74%</span>
+        </div>
+        <div class="preview-chart" aria-hidden="true"><span style="height: 38%"></span><span style="height: 52%"></span><span style="height: 46%"></span><span style="height: 68%"></span><span style="height: 62%"></span><span style="height: 82%"></span><span style="height: 90%"></span></div>
+        <div class="preview-footer"><span>Progresso no mês</span><strong>+12,4%</strong></div>
+      </div>
+    </div>
+
+    <section class="landing-benefits" id="how-it-works">
+      <div class="landing-section-intro"><p class="eyebrow">Tudo no ritmo certo</p><h2>Uma rotina mais simples para você e seus clientes.</h2></div>
+      <div class="benefit-list">
+        <article class="benefit-item"><span class="benefit-number">01</span><div><h3>Organize sem perder o cuidado</h3><p>Planos, exercícios e agenda ficam claros para você dedicar energia ao acompanhamento.</p></div></article>
+        <article class="benefit-item"><span class="benefit-number">02</span><div><h3>Acompanhe o que está mudando</h3><p>Veja o progresso de cada cliente e ajuste o caminho com contexto, não com achismos.</p></div></article>
+        <article class="benefit-item"><span class="benefit-number">03</span><div><h3>Converse de forma mais próxima</h3><p>Mensagens e check-ins no mesmo espaço para manter a relação presente entre os treinos.</p></div></article>
+      </div>
+    </section>
+
+    <footer class="landing-footer"><span>formwell</span><span>Feito para treinadores que acompanham de verdade.</span></footer>
+  </section>
+
+  <section class="login-screen hidden" id="login-screen">
     <div class="login-intro">
       <div class="brand login-brand"><span class="brand-mark">FW</span><span>formwell</span></div>
       <p class="eyebrow">Gestão de treino com mais cuidado</p>
@@ -16,6 +57,7 @@
     </div>
     <form class="login-card" id="login-form">
       <div>
+        <button class="back-link" type="button" data-action="show-landing">← Voltar para apresentação</button>
         <p class="eyebrow">Acessar workspace</p>
         <h2>Bem-vindo de volta</h2>
         <p class="login-subhead">Use uma das contas de teste para continuar.</p>
@@ -45,6 +87,7 @@
         <button class="nav-item active" data-view="overview"><span class="nav-icon">▦</span> Visão geral</button>
         <button class="nav-item" data-view="clients"><span class="nav-icon">◎</span> Clientes</button>
         <button class="nav-item" data-view="plans"><span class="nav-icon">▤</span> Planos</button>
+        <button class="nav-item client-only" data-view="goals"><span class="nav-icon">✦</span> Metas</button>
         <button class="nav-item admin-only" data-view="exercises"><span class="nav-icon">◈</span> Exercícios</button>
         <button class="nav-item" data-view="messages"><span class="nav-icon">✉</span> Mensagens <span class="dot"></span></button>
       </nav>
