@@ -97,7 +97,7 @@
         <div class="profile">
           <div class="avatar trainer-avatar" id="sidebar-avatar">JM</div>
           <div>
-            <strong id="sidebar-name">Jordan Miles</strong>
+            <strong id="sidebar-name">Jorge</strong>
             <small id="sidebar-role">Administrador</small>
           </div>
         </div>
@@ -113,7 +113,7 @@
           <div class="user-menu">
             <button class="user-chip" id="user-chip" aria-expanded="false" aria-controls="user-menu-panel">
               <span class="avatar trainer-avatar small" id="topbar-avatar">JM</span>
-              <span id="topbar-user-name">Jordan Miles</span>
+              <span id="topbar-user-name">Jorge</span>
               <span>⌄</span>
             </button>
             <div class="user-menu-panel hidden" id="user-menu-panel">
@@ -188,7 +188,7 @@
           <input type="time" name="time" value="08:00">
         </label>
 
-        <label>Duração
+        <label>Duração aproximada
           <input type="text" name="duration" value="45 min" placeholder="45 min">
         </label>
       </div>
@@ -196,7 +196,10 @@
       <div class="exercise-section">
         <div class="exercise-header">
           <strong>Lista de exercícios</strong>
-          <button type="button" class="secondary-button" id="add-exercise">＋ Adicionar exercício</button>
+          <div class="exercise-header-actions">
+            <button type="button" class="secondary-button" id="add-block">＋ Criar bloco</button>
+            <button type="button" class="secondary-button" id="add-exercise">＋ Exercício individual</button>
+          </div>
         </div>
         <div id="exercise-list" class="exercise-list"></div>
       </div>
@@ -258,6 +261,23 @@
         <button type="submit" class="primary-button">Cadastrar exercício</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="exercise-picker-dialog" class="exercise-picker-dialog">
+    <div class="dialog-heading">
+      <div>
+        <p class="eyebrow">Biblioteca</p>
+        <h2>Selecione um exercício</h2>
+      </div>
+      <button type="button" class="close-button" id="close-exercise-picker" aria-label="Fechar seleção">×</button>
+    </div>
+    <label>Buscar exercício
+      <input type="search" id="exercise-picker-search" placeholder="Digite o nome do exercício">
+    </label>
+    <div id="exercise-picker-list" class="exercise-picker-list"></div>
+    <div class="dialog-actions">
+      <button type="button" class="secondary-button" id="cancel-exercise-picker">Cancelar</button>
+    </div>
   </dialog>
 
   <script src="supabase-config.js"></script>

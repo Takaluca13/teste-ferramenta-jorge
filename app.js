@@ -83,6 +83,8 @@ let exercises = [
 let databaseReady = false;
 let databasePromise = null;
 let remoteDataReady = false;
+let exercisePickerTarget = null;
+let draggedExercise = null;
 const supabaseSettings = window.FORMWELL_SUPABASE || { enabled: false };
 const supabaseClient = supabaseSettings.enabled && window.supabase
   ? window.supabase.createClient(supabaseSettings.url, supabaseSettings.publishableKey)
@@ -131,6 +133,9 @@ const elements = {
   planDayNumber: document.querySelector('#plan-day-number'),
   planDialogTitle: document.querySelector('#plan-dialog-title'),
   exerciseDialog: document.querySelector('#exercise-dialog'),
+  exercisePickerDialog: document.querySelector('#exercise-picker-dialog'),
+  exercisePickerList: document.querySelector('#exercise-picker-list'),
+  exercisePickerSearch: document.querySelector('#exercise-picker-search'),
   exerciseForm: document.querySelector('#exercise-form'),
   exerciseMediaType: document.querySelector('#exercise-media-type'),
   exerciseMediaFile: document.querySelector('#exercise-media-file'),
@@ -254,6 +259,9 @@ function normaliseRemotePlan(plan) {
       exerciseId: item.exercise_id,
       name: item.exercise_name_snapshot,
       description: item.description_snapshot,
+      blockId: item.block_id || null,
+      blockName: item.block_name || '',
+      blockRounds: Number(item.block_rounds || 1),
       mode: item.mode,
       quantity: item.quantity,
       weight: Number(item.weight || 0)
@@ -326,6 +334,9 @@ async function saveRemotePlan(plan) {
     plan_id: data.id,
     exercise_id: item.exerciseId,
     position: index,
+    block_id: item.blockId || null,
+    block_name: item.blockName || null,
+    block_rounds: item.blockId ? Number(item.blockRounds || 1) : null,
     mode: item.mode || 'reps',
     quantity: Number(item.quantity || item.reps || item.seconds || 0),
     weight: Number(item.weight || 0),
@@ -947,10 +958,37 @@ function renderGoalsPage() {
   return `<div class="goals-layout"><div class="page-heading-row"><div><p class="eyebrow">Seu caminho</p><h2>Metas pessoais</h2><p class="subhead">Escolha o que quer acompanhar e transforme intenção em progresso.</p></div></div><form class="goal-form" id="goal-form"><label>Tipo de meta<select name="type"><option value="weight">Peso</option><option value="aesthetic">Estético</option><option value="mobility">Mobilidade</option><option value="custom">Personalizada</option></select></label><label>Meta<input name="title" placeholder="Ex.: Chegar a 70 kg ou tocar os pés" required></label><label>Como medir<input name="target" placeholder="Ex.: 70 kg, 90 graus, 3x por semana" required></label><label>Prazo<input type="date" name="deadline"></label><button class="primary-button" type="submit">＋ Adicionar meta</button></form><div class="goals-list">${clientGoals.length ? clientGoals.map((goal) => `<article class="goal-card"><span class="modal-tag">${goalTypes[goal.type]}</span><h3>${goal.title}</h3><p>${goal.target}</p><small>${goal.deadline ? `Prazo: ${new Date(`${goal.deadline}T12:00:00`).toLocaleDateString('pt-BR')}` : 'Sem prazo definido'}</small></article>`).join('') : '<div class="empty-state">Você ainda não cadastrou uma meta.</div>'}</div></div>`;
 }
 
+function getGuidedExerciseSequence(plan) {
+    const exercises = plan.exercises || [];
+    const sequence = [];
+    let index = 0;
+
+    while (index < exercises.length) {
+      const exercise = exercises[index];
+      if (!exercise.blockId) {
+        sequence.push({ ...exercise, roundNumber: 1, roundCount: 1 });
+        index += 1;
+        continue;
+      }
+
+      const blockExercises = [];
+      while (index < exercises.length && exercises[index].blockId === exercise.blockId) {
+        blockExercises.push(exercises[index]);
+        index += 1;
+      }
+      const roundCount = Math.max(1, Number(exercise.blockRounds || 1));
+      for (let roundNumber = 1; roundNumber <= roundCount; roundNumber += 1) {
+        blockExercises.forEach((blockExercise) => sequence.push({ ...blockExercise, roundNumber, roundCount }));
+      }
+    }
+
+    return sequence;
+  }
+
 function renderGuidedWorkout() {
   const plan = trainings.find((item) => String(item.id) === String(state.guidedPlanId));
   if (!plan || state.currentRole !== 'client') return '';
-  const planExercises = plan.exercises || [];
+  const planExercises = getGuidedExerciseSequence(plan);
   const item = planExercises[state.guidedExerciseIndex];
   const libraryExercise = getExerciseById(item?.exerciseId);
   const mediaUrl = getExerciseMediaUrl(libraryExercise);
@@ -958,7 +996,10 @@ function renderGuidedWorkout() {
   const mode = item.mode || (item.seconds ? 'time' : 'reps');
   const quantity = item.quantity || (mode === 'time' ? item.seconds : item.reps) || 0;
   const media = mediaUrl ? (libraryExercise.mediaType === 'video' ? `<video class="guided-media" src="${mediaUrl}" controls></video>` : `<img class="guided-media" src="${mediaUrl}" alt="Demonstração de ${item.name}">`) : '<div class="guided-media-placeholder">O professor não adicionou uma demonstração para este exercício.</div>';
-  return `<div class="guided-workout"><button class="back-link" data-action="close-guided-workout">← Voltar aos treinos</button><div class="guided-heading"><div><p class="eyebrow">${plan.title} · Exercício ${state.guidedExerciseIndex + 1} de ${planExercises.length}</p><h2>${item.name}</h2></div><span class="panel-badge">${plan.duration}</span></div>${media}<div class="guided-details"><div><span>Execução</span><strong>${mode === 'time' ? `${quantity} segundos` : `${quantity} repetições`}</strong></div><div><span>Peso</span><strong>${Number(item.weight || 0) ? `${item.weight} kg` : 'Peso corporal'}</strong></div><div><span>Orientação</span><strong>${item.description || libraryExercise?.description || 'Siga o ritmo orientado pelo professor.'}</strong></div></div><div class="guided-actions">${state.guidedExerciseIndex > 0 ? '<button class="secondary-button" data-guided-step="previous">← Anterior</button>' : '<span></span>'}<button class="primary-button" data-guided-step="next">${state.guidedExerciseIndex === planExercises.length - 1 ? 'Concluir treino ✓' : 'Próximo exercício →'}</button></div></div>`;
+  const progressLabel = item.blockId
+    ? `${item.blockName || 'Bloco'} · Volta ${item.roundNumber} de ${item.roundCount}`
+    : `Exercício ${state.guidedExerciseIndex + 1} de ${planExercises.length}`;
+  return `<div class="guided-workout"><button class="back-link" data-action="close-guided-workout">← Voltar aos treinos</button><div class="guided-heading"><div><p class="eyebrow">${plan.title} · ${progressLabel}</p><h2>${item.name}</h2></div><span class="panel-badge">${plan.duration}</span></div>${media}<div class="guided-details"><div><span>Execução</span><strong>${mode === 'time' ? `${quantity} segundos` : `${quantity} repetições`}</strong></div><div><span>Peso</span><strong>${Number(item.weight || 0) ? `${item.weight} kg` : 'Peso corporal'}</strong></div><div><span>Orientação</span><strong>${item.description || libraryExercise?.description || 'Siga o ritmo orientado pelo professor.'}</strong></div></div><div class="guided-actions">${state.guidedExerciseIndex > 0 ? '<button class="secondary-button" data-guided-step="previous">← Anterior</button>' : '<span></span>'}<button class="primary-button" data-guided-step="next">${state.guidedExerciseIndex === planExercises.length - 1 ? 'Concluir treino ✓' : 'Próximo exercício →'}</button></div></div>`;
 }
 
 function renderExercisesPage() {
@@ -1049,42 +1090,175 @@ function renderExerciseRows(exercises = []) {
     return;
   }
 
-  list.innerHTML = exercises.map((exercise) => `
-    <div class="exercise-row">
-      <label>
-        Exercício
-        <select data-field="exerciseId">
-          <option value="">Selecione um exercício</option>
-          ${exercisesLibraryOptions(exercise.exerciseId, exercise.name)}
-        </select>
-      </label>
-      <label>
-        Tipo
-        <select data-field="mode">
-          <option value="reps" ${(exercise.mode || (exercise.seconds ? 'time' : 'reps')) === 'reps' ? 'selected' : ''}>Repetições</option>
-          <option value="time" ${(exercise.mode || (exercise.seconds ? 'time' : 'reps')) === 'time' ? 'selected' : ''}>Tempo</option>
-        </select>
-      </label>
-      <label>
-        Quantidade
-        <input type="number" data-field="quantity" min="0" step="1" value="${Number(exercise.quantity || exercise.reps || exercise.seconds || 0)}">
-      </label>
-      <label>
-        Peso (kg, opcional)
-        <input type="number" data-field="weight" min="0" step="0.5" value="${Number(exercise.weight || 0)}">
-      </label>
-      <button type="button" class="remove-exercise" aria-label="Remover exercício">×</button>
-    </div>
-  `).join('');
+  const groups = [];
+  exercises.forEach((exercise) => {
+    const blockId = exercise.blockId || '';
+    let group = groups[groups.length - 1];
+    if (!group || group.blockId !== blockId) {
+      group = {
+        blockId,
+        blockName: exercise.blockName || '',
+        blockRounds: exercise.blockRounds || 3,
+        exercises: []
+      };
+      groups.push(group);
+    }
+    group.exercises.push(exercise);
+  });
 
-  list.querySelectorAll('.remove-exercise').forEach((button) => {
+  if (!groups.length || groups[groups.length - 1].blockId) {
+    groups.push({ blockId: '', blockName: '', blockRounds: 1, exercises: [] });
+  }
+
+  list.innerHTML = groups.map((group) => {
+    const isBlock = Boolean(group.blockId);
+    return `<section class="exercise-group${isBlock ? ' exercise-block' : ' individual-exercises'}" data-block-id="${escapeHtml(group.blockId)}">
+      ${isBlock ? `<div class="block-heading"><label>Nome do bloco<input data-field="blockName" value="${escapeHtml(group.blockName)}" required></label><label>Voltas<input data-field="blockRounds" type="number" min="1" max="20" value="${Number(group.blockRounds)}" required></label><button type="button" class="remove-block">Remover bloco</button></div>` : '<strong class="individual-heading">Exercícios individuais</strong>'}
+      <div class="block-exercises">${group.exercises.map(renderExerciseRow).join('')}${!group.exercises.length ? '<p class="drop-hint">Arraste um exercício para cá para mantê-lo fora dos blocos.</p>' : ''}</div>
+      <button type="button" class="secondary-button ${isBlock ? 'add-block-exercise' : 'add-individual-exercise'}">＋ ${isBlock ? 'Adicionar exercício ao bloco' : 'Adicionar exercício individual'}</button>
+    </section>`;
+  }).join('');
+
+  bindExerciseRemoval(list);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>\"]/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'
+  })[character]);
+}
+
+function renderExerciseRow(exercise = {}) {
+  const mode = exercise.mode || (exercise.seconds ? 'time' : 'reps');
+  const selectedExercise = getExerciseById(exercise.exerciseId);
+  const exerciseName = selectedExercise?.name || exercise.name || 'Selecione um exercício';
+  return `<div class="exercise-row">
+    <button type="button" class="exercise-drag-handle" aria-label="Arrastar ${escapeHtml(exerciseName)} para reordenar" title="Arraste para reordenar">⠿</button>
+    <div class="exercise-selected"><strong data-field="exerciseName">${escapeHtml(exerciseName)}</strong><button type="button" class="change-exercise">Trocar</button><select data-field="exerciseId" aria-label="Exercício" tabindex="-1">${exercisesLibraryOptions(exercise.exerciseId, exercise.name)}</select></div>
+    <label>Tipo<select data-field="mode"><option value="reps" ${mode === 'reps' ? 'selected' : ''}>Repetições</option><option value="time" ${mode === 'time' ? 'selected' : ''}>Tempo</option></select></label>
+    <label>Quantidade<input type="number" data-field="quantity" min="0" step="1" value="${Number(exercise.quantity || exercise.reps || exercise.seconds || 0)}"></label>
+    <label>Peso (kg, opcional)<input type="number" data-field="weight" min="0" step="0.5" value="${Number(exercise.weight || 0)}"></label>
+    <button type="button" class="remove-exercise" aria-label="Remover exercício">×</button>
+  </div>`;
+}
+
+function bindExerciseRemoval(list) {
+  list.querySelectorAll('.remove-exercise:not([data-bound])').forEach((button) => {
+    button.dataset.bound = 'true';
     button.addEventListener('click', () => {
+      const group = button.closest('.exercise-group');
       button.closest('.exercise-row').remove();
-      if (!list.querySelector('.exercise-row')) {
-        renderExerciseRows([]);
-      }
+      if (group?.classList.contains('exercise-block') && !group.querySelector('.exercise-row')) group.remove();
+      if (!list.querySelector('.exercise-row')) renderExerciseRows([]);
     });
   });
+}
+
+function renderExercisePicker() {
+  const query = elements.exercisePickerSearch.value.trim().toLowerCase();
+  const matches = exercises.filter((exercise) => `${exercise.name} ${exercise.description || ''}`.toLowerCase().includes(query));
+  elements.exercisePickerList.innerHTML = matches.length
+    ? matches.map((exercise) => `<button type="button" class="exercise-picker-option" data-select-exercise="${escapeHtml(exercise.id)}"><strong>${escapeHtml(exercise.name)}</strong><span>${escapeHtml(exercise.description || 'Sem descrição')}</span><small>${exercise.defaultMode === 'time' ? `${Number(exercise.defaultQuantity || 0)} s` : `${Number(exercise.defaultQuantity || 0)} repetições`} · ${Number(exercise.defaultWeight || 0) ? `${Number(exercise.defaultWeight)} kg` : 'sem peso'}</small></button>`).join('')
+    : '<div class="empty-state">Nenhum exercício encontrado.</div>';
+}
+
+function openExercisePicker(group, row = null) {
+  exercisePickerTarget = { group, row };
+  elements.exercisePickerSearch.value = '';
+  renderExercisePicker();
+  elements.exercisePickerDialog.showModal();
+  elements.exercisePickerSearch.focus();
+}
+
+function selectExerciseForPlan(exerciseId) {
+  const exercise = getExerciseById(exerciseId);
+  const target = exercisePickerTarget;
+  if (!exercise || !target?.group?.isConnected) return;
+
+  let row = target.row;
+  if (!row) {
+    target.group.querySelector('.drop-hint')?.remove();
+    target.group.querySelector('.block-exercises').insertAdjacentHTML('beforeend', renderExerciseRow({
+      exerciseId: exercise.id,
+      name: exercise.name,
+      mode: exercise.defaultMode || 'reps',
+      quantity: exercise.defaultQuantity || 0,
+      weight: exercise.defaultWeight || 0
+    }));
+    row = target.group.querySelector('.exercise-row:last-child');
+    bindExerciseRemoval(document.querySelector('#exercise-list'));
+  }
+
+  const select = row.querySelector('[data-field="exerciseId"]');
+  select.value = String(exercise.id);
+  applyExerciseDefaults(row, select.value);
+  row.querySelector('[data-field="exerciseName"]').textContent = exercise.name;
+  row.querySelector('.exercise-drag-handle').setAttribute('aria-label', `Arrastar ${exercise.name} para reordenar`);
+  exercisePickerTarget = null;
+  elements.exercisePickerDialog.close();
+}
+
+function clearExerciseDropIndicators() {
+  document.querySelectorAll('.exercise-row.drop-before, .exercise-row.drop-after, .exercise-group.drop-target')
+    .forEach((element) => element.classList.remove('drop-before', 'drop-after', 'drop-target'));
+}
+
+function updateEmptyExerciseGroup(group) {
+  if (group && !group.querySelector('.exercise-row')) {
+    group.querySelector('.block-exercises').innerHTML = '<p class="drop-hint">Arraste um exercício para cá para mantê-lo neste grupo.</p>';
+  } else {
+    group?.querySelector('.drop-hint')?.remove();
+  }
+}
+
+function startExerciseDrag(event) {
+  const handle = event.target.closest('.exercise-drag-handle');
+  if (!handle || event.button > 0) return;
+  const row = handle.closest('.exercise-row');
+  if (!row) return;
+  event.preventDefault();
+  draggedExercise = { row, pointerId: event.pointerId, dropTarget: null };
+  row.classList.add('is-dragging');
+}
+
+function moveExerciseDrag(event) {
+  if (!draggedExercise || draggedExercise.pointerId !== event.pointerId) return;
+  const target = document.elementFromPoint(event.clientX, event.clientY);
+  const targetRow = target?.closest('.exercise-row');
+  const targetGroup = target?.closest('.exercise-group');
+  clearExerciseDropIndicators();
+
+  if (targetRow && targetRow !== draggedExercise.row) {
+    const rect = targetRow.getBoundingClientRect();
+    const position = event.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+    const sourceGroup = draggedExercise.row.closest('.exercise-group');
+    const destinationGroup = targetRow.closest('.exercise-group');
+    const insertionPoint = position === 'before' ? targetRow : targetRow.nextElementSibling;
+    if (insertionPoint !== draggedExercise.row) {
+      destinationGroup.querySelector('.drop-hint')?.remove();
+      destinationGroup.querySelector('.block-exercises').insertBefore(draggedExercise.row, insertionPoint);
+      updateEmptyExerciseGroup(sourceGroup);
+    }
+    draggedExercise.row.classList.add('is-dragging');
+    draggedExercise.dropTarget = { group: destinationGroup };
+  } else if (targetGroup && targetGroup !== draggedExercise.row.closest('.exercise-group')) {
+    const sourceGroup = draggedExercise.row.closest('.exercise-group');
+    targetGroup.querySelector('.drop-hint')?.remove();
+    targetGroup.querySelector('.block-exercises').appendChild(draggedExercise.row);
+    updateEmptyExerciseGroup(sourceGroup);
+    targetGroup.classList.add('drop-target');
+    draggedExercise.dropTarget = { group: targetGroup };
+  } else {
+    draggedExercise.dropTarget = null;
+  }
+}
+
+function finishExerciseDrag(event) {
+  if (!draggedExercise || (event && draggedExercise.pointerId !== event.pointerId)) return;
+  const { row } = draggedExercise;
+  row.classList.remove('is-dragging');
+  draggedExercise = null;
+  clearExerciseDropIndicators();
 }
 
 function exercisesLibraryOptions(selectedId, legacyName = '') {
@@ -1151,6 +1325,9 @@ function normaliseExercises(rows) {
       const weight = Number(row.querySelector('[data-field="weight"]').value || 0);
       return {
         exerciseId: exerciseId || null,
+        blockId: row.closest('.exercise-group')?.dataset.blockId || null,
+        blockName: row.closest('.exercise-group')?.querySelector('[data-field="blockName"]')?.value.trim() || '',
+        blockRounds: Number(row.closest('.exercise-group')?.querySelector('[data-field="blockRounds"]')?.value || 1),
         name: libraryExercise ? libraryExercise.name : '',
         description: libraryExercise ? libraryExercise.description : '',
         mode,
@@ -1187,11 +1364,11 @@ function openPlanDialog(planId = null) {
     elements.planFrequency.value = plan.frequency;
     elements.planDayName.value = plan.dayName || 'Segunda';
     elements.planDayNumber.value = plan.dayNumber || 15;
-    elements.planForm.title.value = plan.title;
-    elements.planForm.category.value = plan.category;
-    elements.planForm.time.value = plan.time;
-    elements.planForm.duration.value = plan.duration;
-    elements.planForm.notes.value = plan.notes || '';
+    elements.planForm.elements.namedItem('title').value = plan.title;
+    elements.planForm.elements.namedItem('category').value = plan.category;
+    elements.planForm.elements.namedItem('time').value = plan.time;
+    elements.planForm.elements.namedItem('duration').value = plan.duration;
+    elements.planForm.elements.namedItem('notes').value = plan.notes || '';
     renderExerciseRows(plan.exercises || []);
   } else {
     elements.planDialogTitle.textContent = 'Novo treino';
@@ -1200,9 +1377,9 @@ function openPlanDialog(planId = null) {
     elements.planFrequency.value = 'semanal';
     elements.planDayName.value = 'Segunda';
     elements.planDayNumber.value = 15;
-    elements.planForm.time.value = '08:00';
-    elements.planForm.duration.value = '45 min';
-    elements.planForm.title.value = '';
+    elements.planForm.elements.namedItem('time').value = '08:00';
+    elements.planForm.elements.namedItem('duration').value = '45 min';
+    elements.planForm.elements.namedItem('title').value = '';
     renderExerciseRows([
       { exerciseId: exercises[0]?.id, weight: exercises[0]?.defaultWeight || 0, mode: exercises[0]?.defaultMode || 'reps', quantity: exercises[0]?.defaultQuantity || 10 },
       { exerciseId: exercises[1]?.id, weight: exercises[1]?.defaultWeight || 0, mode: exercises[1]?.defaultMode || 'time', quantity: exercises[1]?.defaultQuantity || 30 }
@@ -1603,7 +1780,7 @@ document.addEventListener('click', (event) => {
   const guidedStep = event.target.closest('[data-guided-step]');
   if (guidedStep && state.guidedPlanId) {
     const plan = trainings.find((item) => String(item.id) === String(state.guidedPlanId));
-    const total = plan?.exercises?.length || 0;
+    const total = plan ? getGuidedExerciseSequence(plan).length : 0;
     state.guidedExerciseIndex += guidedStep.dataset.guidedStep === 'previous' ? -1 : 1;
     if (state.guidedExerciseIndex >= total) state.guidedExerciseIndex = total;
     render();
@@ -1667,7 +1844,10 @@ document.addEventListener('change', (event) => {
   }
 
   if (event.target.matches('[data-field="exerciseId"]')) {
-    applyExerciseDefaults(event.target.closest('.exercise-row'), event.target.value);
+    const row = event.target.closest('.exercise-row');
+    applyExerciseDefaults(row, event.target.value);
+    const exercise = getExerciseById(event.target.value);
+    if (exercise) row.querySelector('[data-field="exerciseName"]').textContent = exercise.name;
     return;
   }
 
@@ -1686,26 +1866,68 @@ document.querySelector('#cancel-plan-dialog').addEventListener('click', closePla
 document.querySelector('#add-exercise').addEventListener('click', () => {
   const list = document.querySelector('#exercise-list');
   if (!list) return;
+  let group = [...list.querySelectorAll('.individual-exercises')].at(-1);
+  if (!group) {
+    group = document.createElement('section');
+    group.className = 'exercise-group individual-exercises';
+    group.dataset.blockId = '';
+    group.innerHTML = '<strong class="individual-heading">Exercícios individuais</strong><div class="block-exercises"></div><button type="button" class="secondary-button add-individual-exercise">＋ Adicionar exercício individual</button>';
+    list.appendChild(group);
+  }
+  group.querySelector('.drop-hint')?.remove();
+  openExercisePicker(group);
+});
 
-  const row = document.createElement('div');
-  row.className = 'exercise-row';
-  row.innerHTML = `<label>Exercício<select data-field="exerciseId"><option value="">Selecione um exercício</option>${exercisesLibraryOptions()}</select></label>
-    <label>Tipo<select data-field="mode"><option value="reps">Repetições</option><option value="time">Tempo</option></select></label>
-    <label>Quantidade<input type="number" data-field="quantity" min="0" step="1" value="0"></label>
-    <label>Peso (kg, opcional)<input type="number" data-field="weight" min="0" step="0.5" value="0"></label>
-    <button type="button" class="remove-exercise" aria-label="Remover exercício">×</button>`;
-
-  row.querySelector('.remove-exercise').addEventListener('click', () => {
-    row.remove();
-    if (!list.querySelector('.exercise-row')) {
-      renderExerciseRows([]);
-    }
-  });
-
+document.querySelector('#add-block').addEventListener('click', () => {
+  const list = document.querySelector('#exercise-list');
+  if (!list) return;
   const emptyState = list.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
-  list.appendChild(row);
+  const blockId = globalThis.crypto?.randomUUID?.() || `block-${Date.now()}`;
+  const blockNumber = list.querySelectorAll('.exercise-block').length + 1;
+  const block = document.createElement('section');
+  block.className = 'exercise-group exercise-block';
+  block.dataset.blockId = blockId;
+  block.innerHTML = `<div class="block-heading"><label>Nome do bloco<input data-field="blockName" value="Bloco ${blockNumber}" required></label><label>Voltas<input data-field="blockRounds" type="number" min="1" max="20" value="3" required></label><button type="button" class="remove-block">Remover bloco</button></div><div class="block-exercises"><p class="drop-hint">Adicione exercícios para montar este bloco.</p></div><button type="button" class="secondary-button add-block-exercise">＋ Adicionar exercício ao bloco</button>`;
+  list.appendChild(block);
+  openExercisePicker(block);
 });
+
+document.querySelector('#exercise-list').addEventListener('click', (event) => {
+  const addButton = event.target.closest('.add-block-exercise, .add-individual-exercise');
+  if (addButton) {
+    const group = addButton.closest('.exercise-block');
+      const targetGroup = group || addButton.closest('.individual-exercises');
+      targetGroup.querySelector('.drop-hint')?.remove();
+      openExercisePicker(targetGroup);
+    return;
+  }
+  const changeButton = event.target.closest('.change-exercise');
+  if (changeButton) {
+    openExercisePicker(changeButton.closest('.exercise-group'), changeButton.closest('.exercise-row'));
+    return;
+  }
+  const removeButton = event.target.closest('.remove-block');
+  if (removeButton) {
+    removeButton.closest('.exercise-block').remove();
+    const list = document.querySelector('#exercise-list');
+    if (!list.querySelector('.exercise-row')) renderExerciseRows([]);
+  }
+});
+
+document.querySelector('#exercise-picker-list').addEventListener('click', (event) => {
+  const choice = event.target.closest('[data-select-exercise]');
+  if (choice) selectExerciseForPlan(choice.dataset.selectExercise);
+});
+elements.exercisePickerSearch.addEventListener('input', renderExercisePicker);
+document.querySelector('#close-exercise-picker').addEventListener('click', () => elements.exercisePickerDialog.close());
+document.querySelector('#cancel-exercise-picker').addEventListener('click', () => elements.exercisePickerDialog.close());
+
+const exerciseList = document.querySelector('#exercise-list');
+exerciseList.addEventListener('pointerdown', startExerciseDrag);
+document.addEventListener('pointermove', moveExerciseDrag);
+document.addEventListener('pointerup', finishExerciseDrag);
+document.addEventListener('pointercancel', finishExerciseDrag);
 
 elements.planFrequency.addEventListener('change', syncPlanFormFrequency);
 elements.planForm.addEventListener('submit', handlePlanSubmit);

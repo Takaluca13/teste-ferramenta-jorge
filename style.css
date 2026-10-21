@@ -1392,20 +1392,202 @@ h2 {
   gap: 12px;
 }
 
+.exercise-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .exercise-list {
   display: grid;
   gap: 10px;
 }
 
+.exercise-picker-dialog {
+  width: min(560px, calc(100vw - 28px));
+  max-height: min(80vh, 720px);
+}
+
+.exercise-picker-list {
+  display: grid;
+  gap: 8px;
+  max-height: 48vh;
+  overflow-y: auto;
+}
+
+.exercise-picker-option {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  color: var(--ink);
+  background: #f8f7f3;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.exercise-picker-option:hover,
+.exercise-picker-option:focus-visible {
+  background: #eef1e9;
+  border-color: var(--accent);
+}
+
+.exercise-picker-option span,
+.exercise-picker-option small {
+  color: var(--muted);
+}
+
+.exercise-group {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.exercise-block {
+  padding: 12px;
+  background: #eef1e9;
+  border: 1px solid #d5ddce;
+  border-radius: 10px;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.exercise-block.drop-target,
+.individual-exercises.drop-target {
+  border-color: var(--accent);
+  background: #e4eadc;
+}
+
+.block-heading {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 100px auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.block-heading label {
+  font-size: 12px;
+}
+
+.remove-block {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #d8bbb1;
+  border-radius: 8px;
+  background: #f6e7e1;
+  color: #6e4f45;
+}
+
+.individual-heading {
+  font-size: 13px;
+}
+
+.block-exercises {
+  display: grid;
+  gap: 8px;
+  min-height: 44px;
+  padding: 2px;
+}
+
+.drop-hint {
+  margin: 0;
+  padding: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  border: 1px dashed #b7c2ad;
+  border-radius: 8px;
+}
+
 .exercise-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1.6fr) minmax(120px, 0.9fr) minmax(100px, 0.8fr) minmax(120px, 0.9fr) auto;
+  grid-template-columns: 34px minmax(180px, 1.6fr) minmax(120px, 0.9fr) minmax(100px, 0.8fr) minmax(120px, 0.9fr) auto;
   gap: 8px;
   align-items: end;
+  position: relative;
   padding: 10px;
   background: #f8f7f3;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
+  transition: opacity 120ms ease, box-shadow 120ms ease;
+}
+
+.exercise-drag-handle {
+  min-width: 34px;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.exercise-drag-handle:active {
+  cursor: grabbing;
+}
+
+.exercise-row.is-dragging {
+  opacity: 0.42;
+}
+
+.exercise-row.drop-before::before,
+.exercise-row.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 3px;
+}
+
+.exercise-row.drop-before::before {
+  top: -5px;
+}
+
+.exercise-row.drop-after::after {
+  bottom: -5px;
+}
+
+.exercise-selected {
+  display: flex;
+  min-width: 0;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.exercise-selected strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exercise-selected select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.exercise-selected .change-exercise {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8f7f3;
+  color: var(--ink);
+  font-size: 12px;
 }
 
 .exercise-row label {
@@ -1550,6 +1732,44 @@ textarea {
 
   .dialog-grid {
     grid-template-columns: 1fr;
+  }
+
+  .exercise-header,
+  .exercise-header-actions {
+    align-items: stretch;
+  }
+
+  .exercise-header {
+    flex-direction: column;
+  }
+
+  .block-heading {
+    grid-template-columns: 1fr 90px;
+  }
+
+  .block-heading .remove-block {
+    grid-column: 1 / -1;
+  }
+
+  .exercise-row {
+    grid-template-columns: 34px 1fr 1fr;
+  }
+
+  .exercise-row .exercise-selected {
+    grid-column: 2 / -1;
+  }
+
+  .exercise-row label:nth-of-type(1) {
+    grid-column: 2 / -1;
+  }
+
+  .exercise-row label:nth-of-type(2),
+  .exercise-row label:nth-of-type(3) {
+    grid-column: span 1;
+  }
+
+  .exercise-row .remove-exercise {
+    grid-column: 1 / -1;
   }
 
   .metric-grid {
