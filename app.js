@@ -27,52 +27,53 @@ let messages = JSON.parse(localStorage.getItem('formwell-messages') || JSON.stri
 ]));
 
 let trainings = [
-  { id: 1, clientId: 'amelia', title: 'Treino de força', category: 'Força', time: '08:00', duration: '45 min', notes: 'Foco em agachamento e puxada.', frequency: 'semanal', dayName: 'Segunda', exercises: [
+  { id: 1, clientId: 'amelia', title: 'Treino de força', category: 'Força', notes: 'Foco em agachamento e puxada.', frequency: 'semanal', dayName: 'Segunda', exercises: [
     { name: 'Agachamento livre', weight: 20, reps: 8, seconds: 0 },
     { name: 'Remada baixa', weight: 18, reps: 10, seconds: 0 },
     { name: 'Burpee', weight: 0, reps: 0, seconds: 25 }
   ] },
-  { id: 2, clientId: 'amelia', title: 'Cardio leve', category: 'Cardio', time: '18:30', duration: '30 min', notes: 'Bike + mobilidade.', frequency: 'semanal', dayName: 'Quarta', exercises: [
+  { id: 2, clientId: 'amelia', title: 'Cardio leve', category: 'Cardio', notes: 'Bike + mobilidade.', frequency: 'semanal', dayName: 'Quarta', exercises: [
     { name: 'Bike', weight: 0, reps: 0, seconds: 180 }
   ] },
-  { id: 3, clientId: 'marcus', title: 'Mobilidade de ombros', category: 'Mobilidade', time: '10:30', duration: '40 min', notes: 'Alongamento e ativação', frequency: 'semanal', dayName: 'Quinta', exercises: [
+  { id: 3, clientId: 'marcus', title: 'Mobilidade de ombros', category: 'Mobilidade', notes: 'Alongamento e ativação', frequency: 'semanal', dayName: 'Quinta', exercises: [
     { name: 'Rotação de ombro', weight: 0, reps: 12, seconds: 0 },
     { name: 'Alongamento de peitoral', weight: 0, reps: 0, seconds: 30 }
   ] },
-  { id: 4, clientId: 'marcus', title: 'Reavaliação mensal', category: 'Avaliação', time: '09:00', duration: '60 min', notes: 'Avaliar amplitude e dor', frequency: 'mensal', dayNumber: 15, exercises: [
+  { id: 4, clientId: 'marcus', title: 'Reavaliação mensal', category: 'Avaliação', notes: 'Avaliar amplitude e dor', frequency: 'mensal', dayNumber: 15, exercises: [
     { name: 'Avaliação de amplitude', weight: 0, reps: 0, seconds: 60 }
   ] },
-  { id: 5, clientId: 'sofia', title: 'Treino de core', category: 'Core', time: '07:30', duration: '35 min', notes: 'Exercícios abs e estabilização.', frequency: 'semanal', dayName: 'Terça', exercises: [
+  { id: 5, clientId: 'sofia', title: 'Treino de core', category: 'Core', notes: 'Exercícios abs e estabilização.', frequency: 'semanal', dayName: 'Terça', exercises: [
     { name: 'Prancha', weight: 0, reps: 0, seconds: 45 },
     { name: 'Dead bug', weight: 0, reps: 12, seconds: 0 }
   ] },
-  { id: 6, clientId: 'sofia', title: 'Ajuste postural', category: 'Recuperação', time: '16:00', duration: '50 min', notes: 'Alongamento e mobilidade de coluna.', frequency: 'mensal', dayNumber: 4, exercises: [
+  { id: 6, clientId: 'sofia', title: 'Ajuste postural', category: 'Recuperação', notes: 'Alongamento e mobilidade de coluna.', frequency: 'mensal', dayNumber: 4, exercises: [
     { name: 'Alongamento de coluna', weight: 0, reps: 0, seconds: 40 }
   ] },
-  { id: 7, clientId: 'leo', title: 'Circuito de resistência', category: 'Força', time: '17:00', duration: '50 min', notes: 'Circuito de baixa intensidade.', frequency: 'semanal', dayName: 'Sexta', exercises: [
+  { id: 7, clientId: 'leo', title: 'Circuito de resistência', category: 'Força', notes: 'Circuito de baixa intensidade.', frequency: 'semanal', dayName: 'Sexta', exercises: [
     { name: 'Agachamento goblet', weight: 12, reps: 10, seconds: 0 },
     { name: 'Flexão de parede', weight: 0, reps: 12, seconds: 0 },
     { name: 'Corrida leve', weight: 0, reps: 0, seconds: 30 }
   ] },
-  { id: 8, clientId: 'marina', title: 'Treino funcional', category: 'Força', time: '08:30', duration: '45 min', notes: 'Agachamento, remada e corrida.', frequency: 'semanal', dayName: 'Segunda', exercises: [
+  { id: 8, clientId: 'marina', title: 'Treino funcional', category: 'Força', notes: 'Agachamento, remada e corrida.', frequency: 'semanal', dayName: 'Segunda', exercises: [
     { name: 'Agachamento com kettlebell', weight: 14, reps: 10, seconds: 0 },
     { name: 'Remada', weight: 16, reps: 8, seconds: 0 },
     { name: 'Sprint leve', weight: 0, reps: 0, seconds: 20 }
   ] },
-  { id: 9, clientId: 'marina', title: 'Mobilidade e recuperação', category: 'Mobilidade', time: '18:00', duration: '35 min', notes: 'Alongamento + relaxamento.', frequency: 'semanal', dayName: 'Quinta', exercises: [
+  { id: 9, clientId: 'marina', title: 'Mobilidade e recuperação', category: 'Mobilidade', notes: 'Alongamento + relaxamento.', frequency: 'semanal', dayName: 'Quinta', exercises: [
     { name: 'Alongamento de quadril', weight: 0, reps: 0, seconds: 35 }
   ] },
-  { id: 10, clientId: 'marina', title: 'Acompanhamento mensal', category: 'Avaliação', time: '09:00', duration: '60 min', notes: 'Acompanhamento de progresso.', frequency: 'mensal', dayNumber: 20, exercises: [
+  { id: 10, clientId: 'marina', title: 'Acompanhamento mensal', category: 'Avaliação', notes: 'Acompanhamento de progresso.', frequency: 'mensal', dayNumber: 20, exercises: [
     { name: 'Teste de desempenho', weight: 0, reps: 0, seconds: 60 }
   ] },
-  { id: 11, clientId: 'amelia', title: 'Avaliação técnica', category: 'Avaliação', time: '09:00', duration: '60 min', notes: 'Mensal para progresso e ajuste.', frequency: 'mensal', dayNumber: 12, exercises: [
+  { id: 11, clientId: 'amelia', title: 'Avaliação técnica', category: 'Avaliação', notes: 'Mensal para progresso e ajuste.', frequency: 'mensal', dayNumber: 12, exercises: [
     { name: 'Avaliação de técnica', weight: 0, reps: 0, seconds: 60 }
   ] },
-  { id: 12, clientId: 'leo', title: 'Treino de resistência', category: 'Força', time: '08:00', duration: '40 min', notes: 'Força de membros inferiores.', frequency: 'mensal', dayNumber: 27, exercises: [
+  { id: 12, clientId: 'leo', title: 'Treino de resistência', category: 'Força', notes: 'Força de membros inferiores.', frequency: 'mensal', dayNumber: 27, exercises: [
     { name: 'Leg press', weight: 30, reps: 10, seconds: 0 },
     { name: 'Puxada baixa', weight: 20, reps: 8, seconds: 0 }
   ] }
 ];
+let trainingTemplates = [];
 
 let exercises = [
   { id: 1, name: 'Agachamento livre', description: 'Desça com controle, mantendo o peito aberto e os joelhos alinhados aos pés.', mediaType: 'image', defaultMode: 'reps', defaultQuantity: 10, defaultWeight: 0, mediaUrl: '' },
@@ -103,6 +104,7 @@ const state = {
   guidedPlanId: null,
   guidedExerciseIndex: 0,
   editingPlanId: null,
+  planDialogMode: 'client',
   editingExerciseId: null,
   planClientFilter: 'all',
   planSearch: ''
@@ -137,11 +139,16 @@ const elements = {
   pageTitle: document.querySelector('#page-title'),
   planDialog: document.querySelector('#plan-dialog'),
   planForm: document.querySelector('#plan-form'),
+  planFormError: document.querySelector('#plan-form-error'),
   planClientSelect: document.querySelector('#plan-client-id'),
   planFrequency: document.querySelector('#plan-frequency'),
   planDayName: document.querySelector('#plan-day-name'),
   planDayNumber: document.querySelector('#plan-day-number'),
+  planClientField: document.querySelector('#plan-client-field'),
   planDialogTitle: document.querySelector('#plan-dialog-title'),
+  clientInfoDialog: document.querySelector('#client-info-dialog'),
+  clientInfoTitle: document.querySelector('#client-info-title'),
+  clientInfoDetails: document.querySelector('#client-info-details'),
   exerciseDialog: document.querySelector('#exercise-dialog'),
   exercisePickerDialog: document.querySelector('#exercise-picker-dialog'),
   exercisePickerList: document.querySelector('#exercise-picker-list'),
@@ -156,11 +163,12 @@ function openDatabase() {
   if (databasePromise) return databasePromise;
 
   databasePromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open('formwell-local', 1);
+    const request = indexedDB.open('formwell-local', 2);
     request.onupgradeneeded = () => {
       const database = request.result;
-      database.createObjectStore('exercises', { keyPath: 'id' });
-      database.createObjectStore('trainings', { keyPath: 'id' });
+      if (!database.objectStoreNames.contains('exercises')) database.createObjectStore('exercises', { keyPath: 'id' });
+      if (!database.objectStoreNames.contains('trainings')) database.createObjectStore('trainings', { keyPath: 'id' });
+      if (!database.objectStoreNames.contains('templates')) database.createObjectStore('templates', { keyPath: 'id' });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -180,16 +188,19 @@ function readStore(database, storeName) {
 
 function writeStores(database) {
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(['exercises', 'trainings'], 'readwrite');
+    const transaction = database.transaction(['exercises', 'trainings', 'templates'], 'readwrite');
     const exerciseStore = transaction.objectStore('exercises');
     const trainingStore = transaction.objectStore('trainings');
+    const templateStore = transaction.objectStore('templates');
     exerciseStore.clear();
     trainingStore.clear();
+    templateStore.clear();
     exercises.forEach((exercise) => {
       const { objectUrl, ...storedExercise } = exercise;
       exerciseStore.put(storedExercise);
     });
     trainings.forEach((training) => trainingStore.put(training));
+    trainingTemplates.forEach((template) => templateStore.put(template));
     transaction.oncomplete = resolve;
     transaction.onerror = () => reject(transaction.error);
   });
@@ -212,8 +223,10 @@ async function initialiseDatabase() {
     const database = await openDatabase();
     const storedExercises = await readStore(database, 'exercises');
     const storedTrainings = await readStore(database, 'trainings');
+    const storedTemplates = await readStore(database, 'templates');
     if (storedExercises.length) exercises = storedExercises;
     if (storedTrainings.length) trainings = storedTrainings;
+    trainingTemplates = storedTemplates;
     if (!storedExercises.length || !storedTrainings.length) await writeStores(database);
     databaseReady = true;
   } catch (error) {
@@ -224,19 +237,22 @@ async function initialiseDatabase() {
 async function loadRemoteData() {
   if (!supabaseClient) return;
 
-  const [{ data: planRows, error: planError }, { data: goalRows, error: goalError }, { data: messageRows, error: messageError }, { data: profileRows, error: profileError }] = await Promise.all([
-    supabaseClient.from('training_plans').select('*, training_plan_exercises(*)').order('day_name').order('time'),
+  const [{ data: planRows, error: planError }, { data: templateRows, error: templateError }, { data: goalRows, error: goalError }, { data: messageRows, error: messageError }, { data: profileRows, error: profileError }] = await Promise.all([
+    supabaseClient.from('training_plans').select('*, training_plan_exercises(*)').order('frequency').order('day_name'),
+    supabaseClient.from('training_templates').select('*, training_template_exercises(*)').order('title'),
     supabaseClient.from('goals').select('*').order('created_at', { ascending: false }),
     supabaseClient.from('messages').select('*').order('created_at', { ascending: false }),
     supabaseClient.from('profiles').select('id, full_name, role, age, height_cm, weight_kg, disability_history, surgery_history, fracture_history').eq('role', 'client').order('full_name')
   ]);
 
   if (planError) throw planError;
+  if (templateError) throw templateError;
   if (goalError) throw goalError;
   if (messageError) throw messageError;
   if (profileError) throw profileError;
 
   trainings = (planRows || []).map(normaliseRemotePlan);
+  trainingTemplates = (templateRows || []).map(normaliseRemoteTemplate);
   goals = (goalRows || []).map(normaliseRemoteGoal);
   messages = (messageRows || []).map(normaliseRemoteMessage);
   if (profileRows?.length) {
@@ -268,8 +284,6 @@ function normaliseRemotePlan(plan) {
     frequency: plan.frequency,
     dayName: plan.day_name,
     dayNumber: plan.day_number,
-    time: plan.time,
-    duration: plan.duration,
     notes: plan.notes,
     exercises: (plan.training_plan_exercises || []).sort((a, b) => a.position - b.position).map((item) => ({
       exerciseId: item.exercise_id,
@@ -283,6 +297,14 @@ function normaliseRemotePlan(plan) {
       weight: Number(item.weight || 0)
     }))
   };
+}
+
+function normaliseRemoteTemplate(template) {
+  const plan = normaliseRemotePlan({
+    ...template,
+    training_plan_exercises: template.training_template_exercises
+  });
+  return { ...plan, id: template.id };
 }
 
 function normaliseRemoteGoal(goal) {
@@ -334,8 +356,6 @@ async function saveRemotePlan(plan) {
     frequency: plan.frequency,
     day_name: plan.dayName,
     day_number: plan.dayNumber,
-    time: plan.time,
-    duration: plan.duration,
     notes: plan.notes
   };
   const query = typeof plan.id === 'string'
@@ -364,6 +384,44 @@ async function saveRemotePlan(plan) {
     if (inserted.error) throw inserted.error;
   }
   return normaliseRemotePlan({ ...data, training_plan_exercises: links });
+}
+
+async function saveRemoteTemplate(template) {
+  if (!supabaseClient) return template;
+  const payload = {
+    title: template.title,
+    category: template.category,
+    frequency: template.frequency,
+    day_name: template.dayName,
+    day_number: template.dayNumber,
+    notes: template.notes
+  };
+  const query = typeof template.id === 'string'
+    ? supabaseClient.from('training_templates').update(payload).eq('id', template.id).select().single()
+    : supabaseClient.from('training_templates').insert(payload).select().single();
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const removed = await supabaseClient.from('training_template_exercises').delete().eq('template_id', data.id);
+  if (removed.error) throw removed.error;
+  const links = (template.exercises || []).filter((item) => item.exerciseId).map((item, index) => ({
+    template_id: data.id,
+    exercise_id: item.exerciseId,
+    position: index,
+    block_id: item.blockId || null,
+    block_name: item.blockName || null,
+    block_rounds: item.blockId ? Number(item.blockRounds || 1) : null,
+    mode: item.mode || 'reps',
+    quantity: Number(item.quantity || item.reps || item.seconds || 0),
+    weight: Number(item.weight || 0),
+    exercise_name_snapshot: item.name || getExerciseById(item.exerciseId)?.name || '',
+    description_snapshot: item.description || getExerciseById(item.exerciseId)?.description || ''
+  }));
+  if (links.length) {
+    const inserted = await supabaseClient.from('training_template_exercises').insert(links);
+    if (inserted.error) throw inserted.error;
+  }
+  return normaliseRemoteTemplate({ ...data, training_template_exercises: links });
 }
 
 async function loadRemoteExercises() {
@@ -550,7 +608,22 @@ function persistUserData() {
 }
 
 function getTodayPlans() {
-  return getClientPlans(state.currentClientId).filter((plan) => plan.frequency === 'semanal' && plan.dayName === getTodayName());
+  return getClientPlans(state.currentClientId).filter((plan) => ['semanal', 'quinzenal'].includes(plan.frequency) && plan.dayName === getTodayName());
+}
+
+function getFrequencyLabel(frequency) {
+  return ({
+    nao_periodico: 'Não periódico',
+    semanal: 'Semanal',
+    quinzenal: 'A cada 2 semanas',
+    mensal: 'Mensal'
+  })[frequency] || 'Não periódico';
+}
+
+function getPlanScheduleLabel(plan) {
+  if (plan.frequency === 'mensal' && plan.dayNumber) return `Dia ${plan.dayNumber} · ${getFrequencyLabel(plan.frequency)}`;
+  if (['semanal', 'quinzenal'].includes(plan.frequency) && plan.dayName) return `${plan.dayName} · ${getFrequencyLabel(plan.frequency)}`;
+  return getFrequencyLabel(plan.frequency);
 }
 
 function getMessageAudience(message) {
@@ -570,8 +643,8 @@ function messageBelongsToCurrentUser(message) {
 
 function getNextPlanForClient(clientId) {
   const plans = getClientPlans(clientId).sort((a, b) => {
-    const dayA = a.frequency === 'semanal' ? dayOrder.indexOf(a.dayName) : 7;
-    const dayB = b.frequency === 'semanal' ? dayOrder.indexOf(b.dayName) : 7;
+    const dayA = ['semanal', 'quinzenal'].includes(a.frequency) ? dayOrder.indexOf(a.dayName) : 7;
+    const dayB = ['semanal', 'quinzenal'].includes(b.frequency) ? dayOrder.indexOf(b.dayName) : 7;
     return dayA - dayB;
   });
 
@@ -588,6 +661,7 @@ function formatViewLabel(view) {
     overview: 'Visão geral',
     clients: 'Clientes',
     plans: 'Planos',
+    templates: 'Treinamentos padrão',
     exercises: 'Exercícios',
     messages: 'Mensagens'
   };
@@ -637,7 +711,7 @@ function renderWelcomeRow() {
 
 function renderMetrics() {
   if (state.currentRole === 'admin') {
-    const weeklyTotal = trainings.filter((plan) => plan.frequency === 'semanal').length;
+    const weeklyTotal = trainings.filter((plan) => plan.frequency !== 'nao_periodico').length;
     const activeClients = clients.length;
     const completionRate = 76;
 
@@ -648,9 +722,9 @@ function renderMetrics() {
         <span class="trend positive">↗ 8,3% <em>vs. mês anterior</em></span>
       </article>
       <article class="metric-card">
-        <div class="metric-label">Sessões nesta semana <span class="metric-icon peach">◷</span></div>
+        <div class="metric-label">Treinos periódicos <span class="metric-icon peach">◷</span></div>
         <strong>${weeklyTotal}</strong>
-        <span class="trend positive">↗ 12,0% <em>vs. semana passada</em></span>
+        <span class="trend neutral">Semanal · quinzenal · mensal</span>
       </article>
       <article class="metric-card">
         <div class="metric-label">Planos concluídos <span class="metric-icon lavender">✓</span></div>
@@ -667,19 +741,19 @@ function renderMetrics() {
   }
 
   const clientPlans = getClientPlans(state.currentClientId);
-  const nextPlan = clientPlans.find((plan) => plan.frequency === 'semanal') || clientPlans[0];
+  const nextPlan = clientPlans.find((plan) => ['semanal', 'quinzenal'].includes(plan.frequency)) || clientPlans[0];
   const progress = getCurrentClient().progress;
 
   elements.metricsGrid.innerHTML = `
     <article class="metric-card">
-      <div class="metric-label">Treinos nesta semana <span class="metric-icon mint">◎</span></div>
+      <div class="metric-label">Treinos semanais <span class="metric-icon mint">◎</span></div>
       <strong>${clientPlans.filter((plan) => plan.frequency === 'semanal').length}</strong>
       <span class="trend positive">↗ 3 treinos <em>na sua rotina</em></span>
     </article>
     <article class="metric-card">
       <div class="metric-label">Próximo treino <span class="metric-icon peach">◷</span></div>
       <strong>${nextPlan ? nextPlan.title : 'Sem treino'}</strong>
-      <span class="trend positive">${nextPlan ? `${nextPlan.dayName} • ${nextPlan.time}` : 'Sem agendamento'}</span>
+      <span class="trend positive">${nextPlan ? getPlanScheduleLabel(nextPlan) : 'Sem agendamento'}</span>
     </article>
     <article class="metric-card">
       <div class="metric-label">Progresso <span class="metric-icon lavender">✓</span></div>
@@ -696,14 +770,14 @@ function renderMetrics() {
 
 function renderAdminSchedule() {
   const todayName = getTodayName();
-  const todayPlans = trainings.filter((plan) => plan.frequency === 'semanal' && plan.dayName === todayName);
+  const todayPlans = trainings.filter((plan) => ['semanal', 'quinzenal'].includes(plan.frequency) && plan.dayName === todayName);
 
   const scheduleHtml = todayPlans.length
     ? todayPlans.map((plan) => {
         const client = getClientById(plan.clientId);
         return `
           <div class="schedule-item">
-            <span class="time">${plan.time}</span>
+            <span class="schedule-label">${plan.dayName}</span>
             <span class="schedule-line ${['mint','peach','lavender','yellow'][Math.abs(client.name.length % 4)]}-line"></span>
             <div>
               <strong>${plan.title}</strong>
@@ -764,13 +838,13 @@ function renderClientSchedule() {
   const scheduleHtml = upcoming.length
     ? upcoming.map((plan) => `
       <div class="schedule-item">
-        <span class="time">${plan.dayName || `Dia ${plan.dayNumber}`}</span>
+        <span class="schedule-label">${getPlanScheduleLabel(plan)}</span>
         <span class="schedule-line ${(plan.category === 'Mobilidade' ? 'peach' : plan.category === 'Avaliação' ? 'lavender' : 'mint')}-line"></span>
         <div>
           <strong>${plan.title}</strong>
-          <span>${plan.category} · ${plan.time}</span>
+          <span>${plan.category}</span>
         </div>
-        <button class="status ${(plan.frequency === 'mensal' ? 'confirmed' : 'upcoming')}" data-edit-plan="${plan.id}">${plan.frequency === 'mensal' ? 'Mensal' : 'Semanal'}</button>
+        <span class="status ${(plan.frequency === 'mensal' ? 'confirmed' : 'upcoming')}">${getFrequencyLabel(plan.frequency)}</span>
       </div>
     `).join('')
     : '<div class="empty-state">Ainda não há treinos ajustados para você.</div>';
@@ -812,28 +886,26 @@ function renderClientSchedule() {
 }
 
 function renderClientTable() {
-  const showHealthDetails = state.currentView === 'clients';
   const rows = clients.map((client) => {
     const plans = getClientPlans(client.id);
     const nextPlan = plans[0] || null;
-    const healthDetails = showHealthDetails && client.age != null
-      ? `<small class="client-medical-summary">Idade: ${client.age} anos · Altura: ${client.heightCm} cm · Peso: ${client.weightKg} kg<br>Deficiência ou condição de saúde: ${escapeHtml(client.disabilityHistory || 'Não informado')}<br>Histórico de cirurgias: ${escapeHtml(client.surgeryHistory || 'Não informado')}<br>Histórico de fraturas: ${escapeHtml(client.fractureHistory || 'Não informado')}</small>`
-      : '';
 
     return `
-      <div class="client-row" data-client-row="${client.id}">
+      <div class="client-row">
         <div class="client-name">
           <span class="attention-avatar ${client.color}">${client.initials}</span>
           <div>
-            <strong>${client.name}</strong>
-            <small>${client.email}</small>
-            ${healthDetails}
+            <strong>${escapeHtml(client.name)}</strong>
+            <small>${escapeHtml(client.email || 'Cliente ativo')}</small>
           </div>
         </div>
         <span class="plan">${nextPlan ? nextPlan.title : 'Sem plano'}</span>
         <span class="progress-wrap"><span class="progress"><i style="width:${client.progress}%"></i></span>${client.progress}%</span>
-        <span>${nextPlan ? `${nextPlan.dayName || `Dia ${nextPlan.dayNumber}`} • ${nextPlan.time}` : 'Sem agenda'}</span>
-        <span class="chevron">›</span>
+        <span>${nextPlan ? getPlanScheduleLabel(nextPlan) : 'Sem periodicidade'}</span>
+        <div class="client-row-actions">
+          <button class="inline-button" type="button" data-client-info="${escapeHtml(client.id)}">Informações</button>
+          <button class="inline-button" type="button" data-client-plan="${escapeHtml(client.id)}">Montar treino</button>
+        </div>
       </div>
     `;
   }).join('');
@@ -856,13 +928,34 @@ function renderClientTable() {
           <span>Cliente</span>
           <span>Treino atual</span>
           <span>Progresso</span>
-          <span>Próximo</span>
-          <span></span>
+          <span>Periodicidade</span>
+          <span>Ações</span>
         </div>
         ${rows}
       </div>
     </div>
   `;
+}
+
+function openClientInformation(clientId) {
+  const client = clients.find((item) => String(item.id) === String(clientId));
+  if (!client) return;
+  const value = (entry) => escapeHtml(entry == null || entry === '' ? 'Não informado' : entry);
+  elements.clientInfoTitle.textContent = client.name;
+  elements.clientInfoDetails.innerHTML = `
+    ${client.email ? `<div><span>E-mail</span><strong>${value(client.email)}</strong></div>` : ''}
+    <div><span>Idade</span><strong>${value(client.age == null ? '' : `${client.age} anos`)}</strong></div>
+    <div><span>Altura</span><strong>${value(client.heightCm == null ? '' : `${client.heightCm} cm`)}</strong></div>
+    <div><span>Peso</span><strong>${value(client.weightKg == null ? '' : `${client.weightKg} kg`)}</strong></div>
+    <div class="client-info-wide"><span>Deficiência ou condição de saúde</span><strong>${value(client.disabilityHistory)}</strong></div>
+    <div class="client-info-wide"><span>Histórico de cirurgias</span><strong>${value(client.surgeryHistory)}</strong></div>
+    <div class="client-info-wide"><span>Histórico de fraturas</span><strong>${value(client.fractureHistory)}</strong></div>
+  `;
+  elements.clientInfoDialog.showModal();
+}
+
+function closeClientInformation() {
+  elements.clientInfoDialog.close();
 }
 
 function summarizeExercises(exercises = []) {
@@ -906,8 +999,9 @@ function renderPlanBoard() {
     return matchesClient && matchesSearch;
   });
 
-  const weeklyPlans = relevantPlans.filter((plan) => plan.frequency === 'semanal');
+  const weeklyPlans = relevantPlans.filter((plan) => ['semanal', 'quinzenal'].includes(plan.frequency));
   const monthlyPlans = relevantPlans.filter((plan) => plan.frequency === 'mensal');
+  const nonPeriodicPlans = relevantPlans.filter((plan) => plan.frequency === 'nao_periodico');
 
   const cards = dayOrder.map((dayName) => {
     const items = weeklyPlans.filter((plan) => plan.dayName === dayName);
@@ -920,7 +1014,7 @@ function renderPlanBoard() {
               <strong>${plan.title}</strong>
               <div class="session-meta">
                 <span>${state.currentRole === 'admin' ? client.name : getCurrentClient().name}</span>
-                <span>${plan.time}</span>
+                <span>${getFrequencyLabel(plan.frequency)}</span>
               </div>
               <small>${summarizeExercises(plan.exercises)}</small>
               ${renderClientExerciseMedia(plan.exercises)}
@@ -945,7 +1039,7 @@ function renderPlanBoard() {
         const client = getClientById(plan.clientId);
         return `
           <div class="session-card">
-            <span class="modal-tag">Mensal</span>
+            <span class="modal-tag">${getFrequencyLabel(plan.frequency)}</span>
             <strong>${plan.title}</strong>
             <div class="session-meta">
               <span>${state.currentRole === 'admin' ? client.name : getCurrentClient().name}</span>
@@ -961,12 +1055,33 @@ function renderPlanBoard() {
       }).join('')
     : '<div class="empty-state">Nenhum treino mensal agendado.</div>';
 
+  const nonPeriodicHtml = nonPeriodicPlans.length
+    ? nonPeriodicPlans.map((plan) => {
+        const client = getClientById(plan.clientId);
+        return `
+          <div class="session-card">
+            <span class="modal-tag">Não periódico</span>
+            <strong>${plan.title}</strong>
+            <div class="session-meta">
+              <span>${state.currentRole === 'admin' ? client.name : getCurrentClient().name}</span>
+              <span>${plan.category}</span>
+            </div>
+            <small>${summarizeExercises(plan.exercises)}</small>
+            ${renderClientExerciseMedia(plan.exercises)}
+            <div class="session-actions">
+              ${state.currentRole === 'admin' ? `<button class="inline-button" type="button" data-edit-plan="${plan.id}">Editar</button>` : `<button class="inline-button" type="button" data-start-plan="${plan.id}">▶ Iniciar treino</button>`}
+            </div>
+          </div>
+        `;
+      }).join('')
+    : '<div class="empty-state">Nenhum treino não periódico.</div>';
+
   return `
     <div class="board-wrap">
       <div class="board-header">
         <div>
           <p class="eyebrow">Calendário</p>
-          <h2>${state.currentRole === 'admin' ? 'Planejamento semanal e mensal' : 'Seu calendário de treinos'}</h2>
+          <h2>${state.currentRole === 'admin' ? 'Planejamento dos treinos' : 'Seu calendário de treinos'}</h2>
         </div>
         <div class="board-actions">
           ${state.currentRole === 'admin' ? `
@@ -983,12 +1098,61 @@ function renderPlanBoard() {
       <div class="panel" style="margin-top: 18px;">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Recorrência</p>
+            <p class="eyebrow">Periodicidade</p>
             <h2>Treinos mensais</h2>
           </div>
         </div>
         <div class="session-list">${monthlyHtml}</div>
       </div>
+      <div class="panel" style="margin-top: 18px;">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Treinos avulsos</p>
+            <h2>Não periódicos</h2>
+          </div>
+        </div>
+        <div class="session-list">${nonPeriodicHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTemplatesPage() {
+  const templateCards = trainingTemplates.length
+    ? trainingTemplates.map((template) => {
+        const exercisesHtml = (template.exercises || []).map((item) => {
+          const mode = item.mode || (item.seconds ? 'time' : 'reps');
+          const quantity = item.quantity || (mode === 'time' ? item.seconds : item.reps) || 0;
+          const measure = mode === 'time' ? `${quantity} segundos` : `${quantity} repetições`;
+          const weight = Number(item.weight || 0) ? ` · ${item.weight} kg` : '';
+          return `<li><strong>${escapeHtml(item.name || getExerciseById(item.exerciseId)?.name || 'Exercício')}</strong><span>${measure}${weight}</span></li>`;
+        }).join('');
+        return `
+          <article class="template-card">
+            <div class="template-card-heading">
+              <span class="modal-tag">${escapeHtml(template.category)}</span>
+              <span class="panel-badge">${escapeHtml(getPlanScheduleLabel(template))}</span>
+            </div>
+            <h3>${escapeHtml(template.title)}</h3>
+            <p>${escapeHtml(template.notes || 'Sem observações.')}</p>
+            <ul class="template-exercise-list">${exercisesHtml || '<li>Sem exercícios cadastrados.</li>'}</ul>
+            ${renderClientExerciseMedia(template.exercises)}
+          </article>
+        `;
+      }).join('')
+    : '<div class="empty-state">Nenhum treinamento padrão cadastrado.</div>';
+
+  return `
+    <div class="template-library">
+      <div class="page-heading-row">
+        <div>
+          <p class="eyebrow">Biblioteca compartilhada</p>
+          <h2>Treinamentos padrão</h2>
+          <p class="subhead">Modelos disponíveis para todos os usuários.</p>
+        </div>
+        ${state.currentRole === 'admin' ? '<button class="primary-button" type="button" data-action="open-template-dialog">＋ Novo treinamento padrão</button>' : ''}
+      </div>
+      <div class="template-grid">${templateCards}</div>
     </div>
   `;
 }
@@ -1057,7 +1221,7 @@ function renderGuidedWorkout() {
   const progressLabel = item.blockId
     ? `${item.blockName || 'Bloco'} · Volta ${item.roundNumber} de ${item.roundCount}`
     : `Exercício ${state.guidedExerciseIndex + 1} de ${planExercises.length}`;
-  return `<div class="guided-workout"><button class="back-link" data-action="close-guided-workout">← Voltar aos treinos</button><div class="guided-heading"><div><p class="eyebrow">${plan.title} · ${progressLabel}</p><h2>${item.name}</h2></div><span class="panel-badge">${plan.duration}</span></div>${media}<div class="guided-details"><div><span>Execução</span><strong>${mode === 'time' ? `${quantity} segundos` : `${quantity} repetições`}</strong></div><div><span>Peso</span><strong>${Number(item.weight || 0) ? `${item.weight} kg` : 'Peso corporal'}</strong></div><div><span>Orientação</span><strong>${item.description || libraryExercise?.description || 'Siga o ritmo orientado pelo professor.'}</strong></div></div><div class="guided-actions">${state.guidedExerciseIndex > 0 ? '<button class="secondary-button" data-guided-step="previous">← Anterior</button>' : '<span></span>'}<button class="primary-button" data-guided-step="next">${state.guidedExerciseIndex === planExercises.length - 1 ? 'Concluir treino ✓' : 'Próximo exercício →'}</button></div></div>`;
+  return `<div class="guided-workout"><button class="back-link" data-action="close-guided-workout">← Voltar aos treinos</button><div class="guided-heading"><div><p class="eyebrow">${plan.title} · ${progressLabel}</p><h2>${item.name}</h2></div><span class="panel-badge">${getFrequencyLabel(plan.frequency)}</span></div>${media}<div class="guided-details"><div><span>Execução</span><strong>${mode === 'time' ? `${quantity} segundos` : `${quantity} repetições`}</strong></div><div><span>Peso</span><strong>${Number(item.weight || 0) ? `${item.weight} kg` : 'Peso corporal'}</strong></div><div><span>Orientação</span><strong>${item.description || libraryExercise?.description || 'Siga o ritmo orientado pelo professor.'}</strong></div></div><div class="guided-actions">${state.guidedExerciseIndex > 0 ? '<button class="secondary-button" data-guided-step="previous">← Anterior</button>' : '<span></span>'}<button class="primary-button" data-guided-step="next">${state.guidedExerciseIndex === planExercises.length - 1 ? 'Concluir treino ✓' : 'Próximo exercício →'}</button></div></div>`;
 }
 
 function renderExercisesPage() {
@@ -1112,6 +1276,8 @@ function renderContentPanel() {
     content = renderClientTable();
   } else if (state.currentView === 'plans') {
     content = renderPlanBoard();
+  } else if (state.currentView === 'templates') {
+    content = renderTemplatesPage();
   } else if (state.currentView === 'goals' && state.currentRole === 'client') {
     content = renderGoalsPage();
   } else if (state.currentView === 'exercises' && state.currentRole === 'admin') {
@@ -1367,15 +1533,19 @@ function populatePlanClientOptions() {
 }
 
 function syncPlanFormFrequency() {
-  const isWeekly = elements.planFrequency.value === 'semanal';
-  elements.planDayName.disabled = !isWeekly;
-  elements.planDayNumber.disabled = isWeekly;
-  elements.planDayName.parentElement.classList.toggle('hidden', !isWeekly);
-  elements.planDayNumber.parentElement.classList.toggle('hidden', isWeekly);
+  const frequency = elements.planFrequency.value;
+  const hasWeekday = ['semanal', 'quinzenal'].includes(frequency);
+  const hasMonthDay = frequency === 'mensal';
+  elements.planDayName.disabled = !hasWeekday;
+  elements.planDayName.required = hasWeekday;
+  elements.planDayNumber.disabled = !hasMonthDay;
+  elements.planDayNumber.required = hasMonthDay;
+  elements.planDayName.parentElement.classList.toggle('hidden', !hasWeekday);
+  elements.planDayNumber.parentElement.classList.toggle('hidden', !hasMonthDay);
 }
 
 function normaliseExercises(rows) {
-  return rows
+  return Array.from(rows)
     .map((row) => {
       const exerciseId = row.querySelector('[data-field="exerciseId"]').value;
       const libraryExercise = getExerciseById(exerciseId);
@@ -1410,9 +1580,12 @@ function applyExerciseDefaults(row, exerciseId) {
   weight.value = Number(exercise.defaultWeight || 0);
 }
 
-function openPlanDialog(planId = null) {
+function openPlanDialog(planId = null, clientId = null, mode = 'client') {
   if (state.currentRole !== 'admin') return;
+  state.planDialogMode = mode;
   state.editingPlanId = planId;
+  elements.planFormError.textContent = '';
+  elements.planClientField.classList.toggle('hidden', mode === 'template');
 
   if (planId) {
     const plan = trainings.find((item) => String(item.id) === String(planId));
@@ -1425,19 +1598,15 @@ function openPlanDialog(planId = null) {
     elements.planDayNumber.value = plan.dayNumber || 15;
     elements.planForm.elements.namedItem('title').value = plan.title;
     elements.planForm.elements.namedItem('category').value = plan.category;
-    elements.planForm.elements.namedItem('time').value = plan.time;
-    elements.planForm.elements.namedItem('duration').value = plan.duration;
     elements.planForm.elements.namedItem('notes').value = plan.notes || '';
     renderExerciseRows(plan.exercises || []);
   } else {
-    elements.planDialogTitle.textContent = 'Novo treino';
+    elements.planDialogTitle.textContent = mode === 'template' ? 'Novo treinamento padrão' : 'Novo treino';
     elements.planForm.reset();
-    elements.planClientSelect.value = state.currentRole === 'client' ? state.currentClientId : clients[0].id;
-    elements.planFrequency.value = 'semanal';
+    elements.planClientSelect.value = clientId || (state.currentRole === 'client' ? state.currentClientId : clients[0].id);
+    elements.planFrequency.value = 'nao_periodico';
     elements.planDayName.value = 'Segunda';
     elements.planDayNumber.value = 15;
-    elements.planForm.elements.namedItem('time').value = '08:00';
-    elements.planForm.elements.namedItem('duration').value = '45 min';
     elements.planForm.elements.namedItem('title').value = '';
     renderExerciseRows([
       { exerciseId: exercises[0]?.id, weight: exercises[0]?.defaultWeight || 0, mode: exercises[0]?.defaultMode || 'reps', quantity: exercises[0]?.defaultQuantity || 10 },
@@ -1460,34 +1629,39 @@ async function handlePlanSubmit(event) {
 
   const formData = new FormData(elements.planForm);
   const exerciseRows = document.querySelectorAll('#exercise-list .exercise-row');
+  const frequency = formData.get('frequency');
   const payload = {
-    clientId: formData.get('clientId'),
-    frequency: formData.get('frequency'),
-    dayName: formData.get('dayName') || null,
-    dayNumber: Number(formData.get('dayNumber')) || null,
+    ...(state.planDialogMode === 'client' ? { clientId: formData.get('clientId') } : {}),
+    frequency,
+    dayName: ['semanal', 'quinzenal'].includes(frequency) ? formData.get('dayName') || null : null,
+    dayNumber: frequency === 'mensal' ? Number(formData.get('dayNumber')) || null : null,
     title: formData.get('title'),
     category: formData.get('category'),
-    time: formData.get('time'),
-    duration: formData.get('duration') || '45 min',
     notes: formData.get('notes') || '',
     exercises: normaliseExercises(exerciseRows)
   };
 
-  const existingIndex = state.editingPlanId
-    ? trainings.findIndex((plan) => String(plan.id) === String(state.editingPlanId))
+  const isTemplate = state.planDialogMode === 'template';
+  const collection = isTemplate ? trainingTemplates : trainings;
+  const existingIndex = !isTemplate && state.editingPlanId
+    ? collection.findIndex((plan) => String(plan.id) === String(state.editingPlanId))
     : -1;
-  const nextPlan = { ...(existingIndex >= 0 ? trainings[existingIndex] : {}), ...payload, id: existingIndex >= 0 ? trainings[existingIndex].id : Date.now() };
+  const nextPlan = { ...(existingIndex >= 0 ? collection[existingIndex] : {}), ...payload, id: existingIndex >= 0 ? collection[existingIndex].id : Date.now() };
 
   try {
-    const savedPlan = supabaseClient ? await saveRemotePlan(nextPlan) : nextPlan;
-    if (existingIndex >= 0) trainings[existingIndex] = savedPlan;
-    else trainings.push(savedPlan);
+    const savedPlan = supabaseClient
+      ? (isTemplate ? await saveRemoteTemplate(nextPlan) : await saveRemotePlan(nextPlan))
+      : nextPlan;
+    if (existingIndex >= 0) collection[existingIndex] = savedPlan;
+    else collection.push(savedPlan);
     closePlanDialog();
     await persistData();
     render();
   } catch (error) {
     console.error(error);
-    elements.loginError.textContent = 'Não foi possível salvar o treino no banco de dados.';
+    elements.planFormError.textContent = isTemplate
+      ? 'Não foi possível salvar o treinamento padrão no banco de dados.'
+      : 'Não foi possível salvar o treino no banco de dados.';
   }
 }
 
@@ -1810,6 +1984,10 @@ async function handleExerciseDelete(exerciseId) {
       ...training,
       exercises: (training.exercises || []).filter((item) => String(item.exerciseId) !== String(exerciseId) && item.name !== exercise.name)
     }));
+    trainingTemplates = trainingTemplates.map((template) => ({
+      ...template,
+      exercises: (template.exercises || []).filter((item) => String(item.exerciseId) !== String(exerciseId) && item.name !== exercise.name)
+    }));
     await persistData();
     render();
   } catch (error) {
@@ -1837,9 +2015,12 @@ elements.loginForm.addEventListener('submit', async (event) => {
     try {
       await signInWithSupabase(email, password);
     } catch (error) {
-      elements.loginError.textContent = error.message.toLowerCase().includes('email not confirmed')
+      const message = error.message.toLowerCase();
+      elements.loginError.textContent = message.includes('email not confirmed')
         ? 'Confirme seu e-mail pelo link enviado antes de entrar.'
-        : 'E-mail ou senha inválidos.';
+        : message.includes('invalid login credentials')
+          ? 'E-mail ou senha inválidos.'
+          : 'Não foi possível carregar o workspace. Verifique a conexão e as migrações do Supabase.';
       console.error(error);
     }
     return;
@@ -1922,6 +2103,30 @@ document.addEventListener('click', (event) => {
     return;
   }
 
+  const templateAction = event.target.closest('[data-action="open-template-dialog"]');
+  if (templateAction) {
+    openPlanDialog(null, null, 'template');
+    return;
+  }
+
+  const clientInfoButton = event.target.closest('[data-client-info]');
+  if (clientInfoButton) {
+    openClientInformation(clientInfoButton.dataset.clientInfo);
+    return;
+  }
+
+  const closeClientInfoButton = event.target.closest('[data-action="close-client-info"]');
+  if (closeClientInfoButton) {
+    closeClientInformation();
+    return;
+  }
+
+  const clientPlanButton = event.target.closest('[data-client-plan]');
+  if (clientPlanButton) {
+    openPlanDialog(null, clientPlanButton.dataset.clientPlan);
+    return;
+  }
+
   const viewButton = event.target.closest('[data-view-action]');
   if (viewButton) {
     state.currentView = viewButton.dataset.viewAction;
@@ -1975,13 +2180,6 @@ document.addEventListener('click', (event) => {
     return;
   }
 
-  const clientRow = event.target.closest('[data-client-row]');
-  if (clientRow) {
-    state.currentClientId = clientRow.dataset.clientRow;
-    state.currentView = 'plans';
-    render();
-    return;
-  }
 });
 
 document.addEventListener('input', (event) => {
@@ -1997,6 +2195,10 @@ document.addEventListener('input', (event) => {
 });
 
 document.addEventListener('change', (event) => {
+  if (event.target.id === 'plan-frequency') {
+    syncPlanFormFrequency();
+    return;
+  }
   if (event.target.id === 'message-recipient-type') {
     populateMessageRecipients();
     return;

@@ -119,6 +119,7 @@
         <button class="nav-item active" data-view="overview"><span class="nav-icon">▦</span> Visão geral</button>
         <button class="nav-item" data-view="clients"><span class="nav-icon">◎</span> Clientes</button>
         <button class="nav-item" data-view="plans"><span class="nav-icon">▤</span> Planos</button>
+        <button class="nav-item" data-view="templates"><span class="nav-icon">▧</span> Treinamentos padrão</button>
         <button class="nav-item client-only" data-view="goals"><span class="nav-icon">✦</span> Metas</button>
         <button class="nav-item admin-only" data-view="exercises"><span class="nav-icon">◈</span> Exercícios</button>
         <button class="nav-item" data-view="messages"><span class="nav-icon">✉</span> Mensagens <span class="dot"></span></button>
@@ -173,14 +174,17 @@
         </div>
         <button type="button" class="close-button" id="close-plan-dialog">×</button>
       </div>
+      <p class="login-error" id="plan-form-error" role="alert"></p>
 
       <div class="dialog-grid">
-        <label>Cliente
+        <label id="plan-client-field">Cliente
           <select name="clientId" id="plan-client-id"></select>
         </label>
-        <label>Recorrência
+        <label>Treino periódico?
           <select name="frequency" id="plan-frequency">
+            <option value="nao_periodico">Não</option>
             <option value="semanal">Semanal</option>
+            <option value="quinzenal">A cada 2 semanas</option>
             <option value="mensal">Mensal</option>
           </select>
         </label>
@@ -216,13 +220,6 @@
           </select>
         </label>
 
-        <label>Horário
-          <input type="time" name="time" value="08:00">
-        </label>
-
-        <label>Duração aproximada
-          <input type="text" name="duration" value="45 min" placeholder="45 min">
-        </label>
       </div>
 
       <div class="exercise-section">
@@ -245,6 +242,22 @@
         <button type="submit" class="primary-button">Salvar treino</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="client-info-dialog">
+    <div class="client-info-content">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">Cadastro do cliente</p>
+          <h2 id="client-info-title">Informações do cliente</h2>
+        </div>
+        <button type="button" class="close-button" data-action="close-client-info" aria-label="Fechar">×</button>
+      </div>
+      <div id="client-info-details" class="client-info-details"></div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-button" data-action="close-client-info">Fechar</button>
+      </div>
+    </div>
   </dialog>
 
   <dialog id="exercise-dialog">
