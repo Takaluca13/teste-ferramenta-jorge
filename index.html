@@ -59,8 +59,8 @@
       <div>
         <button class="back-link" type="button" data-action="show-landing">← Voltar para apresentação</button>
         <p class="eyebrow">Acessar workspace</p>
-        <h2>Bem-vindo de volta</h2>
-        <p class="login-subhead">Use uma das contas de teste para continuar.</p>
+        <h2 id="login-title">Bem-vindo de volta</h2>
+        <p class="login-subhead" id="login-subhead">Entre com seu e-mail e senha.</p>
       </div>
       <label>E-mail
         <input type="email" id="login-email" autocomplete="username" placeholder="voce@email.com" required>
@@ -70,11 +70,43 @@
       </label>
       <p class="login-error" id="login-error" role="alert"></p>
       <button type="submit" class="primary-button login-submit">Entrar</button>
-      <div class="demo-accounts">
+      <button type="button" class="text-button login-mode-button" id="login-mode-button" data-action="toggle-login-mode">Criar conta</button>
+      <div class="demo-accounts" id="demo-accounts">
         <span>Contas de teste</span>
-        <button type="button" data-login-account="admin">Administrador <small>admin@formwell.com</small></button>
-        <button type="button" data-login-account="client">Aluno <small>marina@formwell.com</small></button>
       </div>
+    </form>
+  </section>
+
+  <section class="profile-setup hidden" id="profile-setup">
+    <form class="profile-setup-card" id="profile-setup-form">
+      <p class="eyebrow">Primeiro acesso</p>
+      <h1>Vamos conhecer você</h1>
+      <p class="login-subhead">Preencha seus dados para concluir o cadastro e permitir que seu professor adapte os treinos com segurança.</p>
+      <div class="profile-setup-grid">
+        <label class="profile-name-field">Nome completo
+          <input name="fullName" type="text" autocomplete="name" required>
+        </label>
+        <label>Idade
+          <input name="age" type="number" min="1" max="120" step="1" required>
+        </label>
+        <label>Altura (cm)
+          <input name="heightCm" type="number" min="1" max="300" step="0.1" required>
+        </label>
+        <label>Peso (kg)
+          <input name="weightKg" type="number" min="1" max="600" step="0.1" required>
+        </label>
+        <label>Deficiência ou condição de saúde
+          <textarea name="disabilityHistory" rows="3" placeholder="Descreva; se não houver, escreva 'Nenhuma'." required></textarea>
+        </label>
+        <label>Histórico de cirurgias
+          <textarea name="surgeryHistory" rows="3" placeholder="Informe quais e quando; se não houver, escreva 'Nenhuma'." required></textarea>
+        </label>
+        <label>Histórico de fraturas
+          <textarea name="fractureHistory" rows="3" placeholder="Informe quais e quando; se não houver, escreva 'Nenhuma'." required></textarea>
+        </label>
+      </div>
+      <p class="login-error" id="profile-setup-error" role="alert"></p>
+      <button type="submit" class="primary-button login-submit">Concluir cadastro</button>
     </form>
   </section>
 

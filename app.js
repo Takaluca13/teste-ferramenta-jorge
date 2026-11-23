@@ -93,10 +93,13 @@ const supabaseClient = supabaseSettings.enabled && window.supabase
 const state = {
   isAuthenticated: false,
   loginRequested: false,
+  loginMode: 'signin',
+  onboardingRequired: false,
   currentRole: 'admin',
   currentView: 'overview',
   currentClientId: 'marina',
   authUserId: null,
+  profile: null,
   guidedPlanId: null,
   guidedExerciseIndex: 0,
   editingPlanId: null,
@@ -112,6 +115,13 @@ const elements = {
   loginEmail: document.querySelector('#login-email'),
   loginPassword: document.querySelector('#login-password'),
   loginError: document.querySelector('#login-error'),
+  loginTitle: document.querySelector('#login-title'),
+  loginSubhead: document.querySelector('#login-subhead'),
+  loginModeButton: document.querySelector('#login-mode-button'),
+  demoAccounts: document.querySelector('#demo-accounts'),
+  profileSetup: document.querySelector('#profile-setup'),
+  profileSetupForm: document.querySelector('#profile-setup-form'),
+  profileSetupError: document.querySelector('#profile-setup-error'),
   appShell: document.querySelector('#app-shell'),
   welcomeRow: document.querySelector('#welcome-row'),
   metricsGrid: document.querySelector('#metrics-grid'),
@@ -218,7 +228,7 @@ async function loadRemoteData() {
     supabaseClient.from('training_plans').select('*, training_plan_exercises(*)').order('day_name').order('time'),
     supabaseClient.from('goals').select('*').order('created_at', { ascending: false }),
     supabaseClient.from('messages').select('*').order('created_at', { ascending: false }),
-    supabaseClient.from('profiles').select('id, full_name, role').eq('role', 'client').order('full_name')
+    supabaseClient.from('profiles').select('id, full_name, role, age, height_cm, weight_kg, disability_history, surgery_history, fracture_history').eq('role', 'client').order('full_name')
   ]);
 
   if (planError) throw planError;
@@ -237,7 +247,13 @@ async function loadRemoteData() {
       initials: (profile.full_name || 'AS').split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase(),
       progress: 0,
       color: ['coral', 'blue', 'olive', 'lavender', 'mint'][index % 5],
-      focus: 'Acompanhamento personalizado'
+      focus: 'Acompanhamento personalizado',
+      age: profile.age,
+      heightCm: profile.height_cm,
+      weightKg: profile.weight_kg,
+      disabilityHistory: profile.disability_history,
+      surgeryHistory: profile.surgery_history,
+      fractureHistory: profile.fracture_history
     }));
   }
   remoteDataReady = true;
@@ -431,15 +447,44 @@ async function getRemoteMediaUrl(exercise) {
 async function signInWithSupabase(email, password) {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error || !data.user) throw error || new Error('Login inválido');
-  const profile = await supabaseClient.from('profiles').select('role').eq('id', data.user.id).single();
+  await activateSupabaseUser(data.user);
+}
+
+function isProfileComplete(profile) {
+  return Boolean(
+    profile
+    && profile.full_name?.trim()
+    && profile.age != null
+    && profile.height_cm != null
+    && profile.weight_kg != null
+    && typeof profile.disability_history === 'string'
+    && profile.disability_history.trim()
+    && typeof profile.surgery_history === 'string'
+    && profile.surgery_history.trim()
+    && typeof profile.fracture_history === 'string'
+    && profile.fracture_history.trim()
+  );
+}
+
+async function activateSupabaseUser(user) {
+  const profile = await supabaseClient.from('profiles')
+    .select('id, full_name, role, age, height_cm, weight_kg, disability_history, surgery_history, fracture_history')
+    .eq('id', user.id)
+    .single();
   if (profile.error) throw profile.error;
   state.isAuthenticated = true;
-  state.authUserId = data.user.id;
+  state.authUserId = user.id;
   state.currentRole = profile.data.role;
+  state.profile = profile.data;
+  state.onboardingRequired = profile.data.role === 'client' && !isProfileComplete(profile.data);
   state.currentView = 'overview';
-  state.currentClientId = data.user.id;
-  await loadRemoteExercises();
-  await loadRemoteData();
+  state.currentClientId = user.id;
+  if (!state.onboardingRequired) {
+    await loadRemoteExercises();
+    await loadRemoteData();
+  } else {
+    elements.profileSetupForm.elements.fullName.value = profile.data.full_name || '';
+  }
   elements.loginError.textContent = '';
   elements.loginForm.reset();
   render();
@@ -468,6 +513,14 @@ function getExerciseMediaUrl(exercise) {
 }
 
 function getCurrentUser() {
+  if (state.profile?.full_name) {
+    const name = state.profile.full_name.trim();
+    return {
+      name,
+      initials: name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase(),
+      roleLabel: state.currentRole === 'admin' ? 'Administrador' : 'Cliente'
+    };
+  }
   return state.currentRole === 'admin'
     ? { name: 'Jordan Miles', initials: 'JM', roleLabel: 'Administrador' }
     : { name: 'Marina Costa', initials: 'MC', roleLabel: 'Cliente' };
@@ -759,9 +812,13 @@ function renderClientSchedule() {
 }
 
 function renderClientTable() {
+  const showHealthDetails = state.currentView === 'clients';
   const rows = clients.map((client) => {
     const plans = getClientPlans(client.id);
     const nextPlan = plans[0] || null;
+    const healthDetails = showHealthDetails && client.age != null
+      ? `<small class="client-medical-summary">Idade: ${client.age} anos · Altura: ${client.heightCm} cm · Peso: ${client.weightKg} kg<br>Deficiência ou condição de saúde: ${escapeHtml(client.disabilityHistory || 'Não informado')}<br>Histórico de cirurgias: ${escapeHtml(client.surgeryHistory || 'Não informado')}<br>Histórico de fraturas: ${escapeHtml(client.fractureHistory || 'Não informado')}</small>`
+      : '';
 
     return `
       <div class="client-row" data-client-row="${client.id}">
@@ -770,6 +827,7 @@ function renderClientTable() {
           <div>
             <strong>${client.name}</strong>
             <small>${client.email}</small>
+            ${healthDetails}
           </div>
         </div>
         <span class="plan">${nextPlan ? nextPlan.title : 'Sem plano'}</span>
@@ -1268,8 +1326,9 @@ function exercisesLibraryOptions(selectedId, legacyName = '') {
 function render() {
   elements.landingScreen.classList.toggle('hidden', state.isAuthenticated || state.loginRequested);
   elements.loginScreen.classList.toggle('hidden', state.isAuthenticated || !state.loginRequested);
-  elements.appShell.classList.toggle('hidden', !state.isAuthenticated);
-  if (!state.isAuthenticated) return;
+  elements.profileSetup.classList.toggle('hidden', !state.isAuthenticated || !state.onboardingRequired);
+  elements.appShell.classList.toggle('hidden', !state.isAuthenticated || state.onboardingRequired);
+  if (!state.isAuthenticated || state.onboardingRequired) return;
 
   renderAccountHeader();
   if (state.guidedPlanId) {
@@ -1437,6 +1496,38 @@ const demoAccounts = {
   client: { email: 'marina@formwell.com', password: 'marina123', role: 'client' }
 };
 
+function setLoginMode(mode) {
+  state.loginMode = mode;
+  const isSignup = mode === 'signup';
+  elements.loginTitle.textContent = isSignup ? 'Crie sua conta' : 'Bem-vindo de volta';
+  elements.loginSubhead.textContent = isSignup
+    ? 'Cadastre seu e-mail e senha. Enviaremos um link para confirmar seu e-mail.'
+    : 'Entre com seu e-mail e senha.';
+  elements.loginForm.querySelector('.login-submit').textContent = isSignup ? 'Criar conta' : 'Entrar';
+  elements.loginModeButton.textContent = isSignup ? 'Já tem uma conta? Entrar' : 'Criar conta';
+  elements.demoAccounts.classList.toggle('hidden', isSignup);
+  elements.loginPassword.autocomplete = isSignup ? 'new-password' : 'current-password';
+  if (isSignup) elements.loginPassword.setAttribute('minlength', '8');
+  else elements.loginPassword.removeAttribute('minlength');
+}
+
+async function signUpWithSupabase(email, password) {
+  if (!supabaseClient) throw new Error('O cadastro exige a configuração do Supabase.');
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: redirectTo }
+  });
+  if (error) throw error;
+  if (data.session && data.user) {
+    await activateSupabaseUser(data.user);
+    return;
+  }
+  elements.loginError.textContent = 'Verifique sua caixa de entrada e confirme seu e-mail para continuar.';
+  elements.loginForm.reset();
+}
+
 function login(role, email, password) {
   const account = demoAccounts[role];
   if (!account || account.email !== email || account.password !== password) {
@@ -1446,6 +1537,8 @@ function login(role, email, password) {
 
   state.isAuthenticated = true;
   state.authUserId = null;
+  state.profile = null;
+  state.onboardingRequired = false;
   state.currentRole = account.role;
   state.currentView = 'overview';
   state.currentClientId = account.role === 'client' ? 'marina' : state.currentClientId;
@@ -1458,6 +1551,8 @@ async function logout() {
   if (supabaseClient) await supabaseClient.auth.signOut();
   state.isAuthenticated = false;
   state.authUserId = null;
+  state.profile = null;
+  state.onboardingRequired = false;
   remoteDataReady = false;
   state.loginRequested = false;
   state.currentView = 'overview';
@@ -1465,12 +1560,15 @@ async function logout() {
   elements.userChip.setAttribute('aria-expanded', 'false');
   elements.loginForm.reset();
   elements.loginError.textContent = '';
+  elements.profileSetupError.textContent = '';
+  setLoginMode('signin');
   render();
 }
 
 function showLogin() {
   state.loginRequested = true;
   elements.loginError.textContent = '';
+  setLoginMode('signin');
   render();
   elements.loginEmail.focus();
 }
@@ -1479,7 +1577,51 @@ function showLanding() {
   state.loginRequested = false;
   elements.loginForm.reset();
   elements.loginError.textContent = '';
+  setLoginMode('signin');
   render();
+}
+
+async function handleProfileSetupSubmit(event) {
+  event.preventDefault();
+  if (!supabaseClient || !state.authUserId) {
+    elements.profileSetupError.textContent = 'Não foi possível salvar seu cadastro. Entre novamente e tente outra vez.';
+    return;
+  }
+
+  const formData = new FormData(elements.profileSetupForm);
+  const { error } = await supabaseClient.from('profiles').update({
+    full_name: String(formData.get('fullName')).trim(),
+    age: Number(formData.get('age')),
+    height_cm: Number(formData.get('heightCm')),
+    weight_kg: Number(formData.get('weightKg')),
+    disability_history: String(formData.get('disabilityHistory')).trim(),
+    surgery_history: String(formData.get('surgeryHistory')).trim(),
+    fracture_history: String(formData.get('fractureHistory')).trim()
+  }).eq('id', state.authUserId).select('id').single();
+
+  if (error) {
+    console.error(error);
+    elements.profileSetupError.textContent = 'Não foi possível salvar seus dados. Tente novamente.';
+    return;
+  }
+
+  try {
+    const { data, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !data.user) throw userError || new Error('Sessão expirada');
+    await activateSupabaseUser(data.user);
+    elements.profileSetupError.textContent = '';
+    elements.profileSetupForm.reset();
+  } catch (error) {
+    console.error(error);
+    elements.profileSetupError.textContent = 'Seus dados foram enviados, mas não foi possível abrir o workspace. Entre novamente.';
+  }
+}
+
+async function initialiseAuth() {
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) throw error;
+  if (data.session?.user) await activateSupabaseUser(data.session.user);
 }
 
 function populateMessageRecipients() {
@@ -1680,11 +1822,24 @@ elements.loginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const email = elements.loginEmail.value.trim().toLowerCase();
   const password = elements.loginPassword.value;
+  if (state.loginMode === 'signup') {
+    try {
+      await signUpWithSupabase(email, password);
+    } catch (error) {
+      elements.loginError.textContent = error.message.includes('configuration')
+        ? 'O cadastro por e-mail precisa estar configurado no Supabase.'
+        : 'Não foi possível criar a conta. Verifique os dados e tente novamente.';
+      console.error(error);
+    }
+    return;
+  }
   if (supabaseClient) {
     try {
       await signInWithSupabase(email, password);
     } catch (error) {
-      elements.loginError.textContent = 'E-mail ou senha inválidos.';
+      elements.loginError.textContent = error.message.toLowerCase().includes('email not confirmed')
+        ? 'Confirme seu e-mail pelo link enviado antes de entrar.'
+        : 'E-mail ou senha inválidos.';
       console.error(error);
     }
     return;
@@ -1692,6 +1847,8 @@ elements.loginForm.addEventListener('submit', async (event) => {
   const role = Object.keys(demoAccounts).find((key) => demoAccounts[key].email === email);
   login(role, email, password);
 });
+
+elements.profileSetupForm.addEventListener('submit', handleProfileSetupSubmit);
 
 document.querySelectorAll('[data-login-account]').forEach((button) => {
   button.addEventListener('click', async () => {
@@ -1721,6 +1878,13 @@ document.querySelectorAll('.nav-item[data-view]').forEach((button) => {
 });
 
 document.addEventListener('click', (event) => {
+  const toggleLoginModeAction = event.target.closest('[data-action="toggle-login-mode"]');
+  if (toggleLoginModeAction) {
+    setLoginMode(state.loginMode === 'signin' ? 'signup' : 'signin');
+    elements.loginError.textContent = '';
+    return;
+  }
+
   const showLoginAction = event.target.closest('[data-action="show-login"]');
   if (showLoginAction) {
     showLogin();
@@ -1937,6 +2101,10 @@ elements.exerciseForm.addEventListener('submit', handleExerciseSubmit);
 
 renderExerciseRows([]);
 render();
+initialiseAuth().catch((error) => {
+  console.error('Não foi possível restaurar a sessão do Supabase.', error);
+  elements.loginError.textContent = 'Não foi possível restaurar sua sessão. Entre novamente.';
+});
 initialiseDatabase().then(() => {
   renderExerciseRows([]);
   render();
